@@ -240,13 +240,19 @@ tbody tr:hover{background:var(--bg);}
 
 <div id="as">
   <nav class="nb">
-    <div class="nb-l"></div>
+    <div class="nb-l">
+      <div style="display:flex;gap:4px;margin-right:12px">
+        <button id="mod-lab" onclick="setMod('lab')" style="font-size:11px;padding:5px 12px;border-radius:8px;border:none;background:rgba(255,255,255,.2);color:#fff;cursor:pointer;font-weight:700;font-family:inherit">Lab</button>
+        <button id="mod-asaas" onclick="setMod('asaas')" style="font-size:11px;padding:5px 12px;border-radius:8px;border:none;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);cursor:pointer;font-weight:600;font-family:inherit;display:none">ASAAS</button>
+        <button id="mod-multi" onclick="setMod('multi')" style="font-size:11px;padding:5px 12px;border-radius:8px;border:none;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);cursor:pointer;font-weight:600;font-family:inherit;display:none">Multicrédito</button>
+      </div></div>
     <div class="nb-r">
       <div class="tabs">
         <button class="tab active" id="t-k" onclick="sw('k')">Serviços</button>
         <button class="tab" id="t-r" onclick="sw('r')">Montagem</button>
         <button class="tab" id="t-g" onclick="sw('g')">Garantias</button>
         <button class="tab" id="t-r2" onclick="sw('r2')">Refeitos</button>
+        <button class="tab" id="t-pz" onclick="sw('pz')">Prazos</button>
         <button class="tab" id="t-pz" onclick="sw('pz')">Prazos</button>
         <button class="tab" id="t-e" onclick="sw('e')" style="display:none">Estoque</button>
       </div>
@@ -569,6 +575,78 @@ tbody tr:hover{background:var(--bg);}
   </div>
 </div>
 
+
+<!-- ── MODULO FINANCEIRO ───────────────────────── -->
+<div id="fin-as" style="display:none;flex:1;flex-direction:column">
+  <div style="padding:1.25rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+      <span style="font-size:18px;font-weight:800;color:var(--tx)">ASAAS — Cobrança</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="as-filtro" onchange="rnFin('asaas')" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--bo);border-radius:8px;background:var(--w);color:var(--tx);font-family:inherit;outline:none">
+          <option value="todos">Todos</option>
+          <option value="aberto">Em aberto</option>
+          <option value="atrasado">Atrasados</option>
+          <option value="pago">Pagos</option>
+        </select>
+        <button onclick="opNovaCob('asaas')" style="font-size:12px;padding:7px 16px;border-radius:9px;border:none;background:var(--v);color:#fff;cursor:pointer;font-weight:700;font-family:inherit">+ Nova Cobrança</button>
+      </div>
+    </div>
+    <div class="rsum" id="as-kpis"></div>
+    <div class="tw"><div id="as-body"><div class="er">Carregando...</div></div></div>
+  </div>
+</div>
+
+<div id="fin-mu" style="display:none;flex:1;flex-direction:column">
+  <div style="padding:1.25rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+      <span style="font-size:18px;font-weight:800;color:var(--tx)">Multicrédito — Cobrança</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="mu-filtro" onchange="rnFin('multicredito')" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--bo);border-radius:8px;background:var(--w);color:var(--tx);font-family:inherit;outline:none">
+          <option value="todos">Todos</option>
+          <option value="aberto">Em aberto</option>
+          <option value="atrasado">Atrasados</option>
+          <option value="pago">Pagos</option>
+        </select>
+        <button onclick="opNovaCob('multicredito')" style="font-size:12px;padding:7px 16px;border-radius:9px;border:none;background:var(--vc);color:#fff;cursor:pointer;font-weight:700;font-family:inherit">+ Nova Cobrança</button>
+      </div>
+    </div>
+    <div class="rsum" id="mu-kpis"></div>
+    <div class="tw"><div id="mu-body"><div class="er">Carregando...</div></div></div>
+  </div>
+</div>
+
+<!-- Modal Nova Cobrança -->
+<div class="mb" id="cob-modal" style="display:none">
+  <div class="md" style="max-width:480px;max-height:90vh;overflow-y:auto">
+    <div class="mh"><span id="cob-title">Nova Cobrança</span><button class="mx" onclick="clsCob()">&#10005;</button></div>
+    <input type="hidden" id="cob-fin"/>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="mf"><label>Data da Compra</label><input id="cob-dt" type="date"/></div>
+      <div class="mf"><label>OS</label><input id="cob-os" placeholder="Ex: 4546"/></div>
+      <div class="mf"><label>CPF Titular</label><input id="cob-cpf" placeholder="000.000.000-00"/></div>
+      <div class="mf"><label>Nome do Titular <span style="color:var(--re)">*</span></label><input id="cob-nome" placeholder="Nome completo"/></div>
+      <div class="mf" style="grid-column:1/-1"><label>Telefone</label><input id="cob-tel" placeholder="(00) 00000-0000"/></div>
+      <div class="mf"><label>Valor Total <span style="color:var(--re)">*</span></label><input id="cob-vtotal" type="number" step="0.01" placeholder="0.00"/></div>
+      <div class="mf"><label>Parcelamento <span style="color:var(--re)">*</span></label><input id="cob-parc" type="number" min="1" placeholder="Ex: 6" oninput="calcParcela()"/></div>
+      <div class="mf"><label>Valor Parcela</label><input id="cob-vparc" type="number" step="0.01" placeholder="Auto" readonly style="background:var(--bg)"/></div>
+      <div class="mf"><label>Data 1ª Parcela <span style="color:var(--re)">*</span></label><input id="cob-dt1" type="date"/></div>
+      <div class="mf" style="grid-column:1/-1"><label>Observação</label><textarea id="cob-obs" style="width:100%;font-size:13px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--bo);background:var(--bg);color:var(--tx);font-family:inherit;outline:none;resize:vertical;min-height:60px"></textarea></div>
+    </div>
+    <div class="mft"><button class="bc" onclick="clsCob()">Cancelar</button><button class="bsv" onclick="svCob()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- Modal Baixa Parcela -->
+<div class="mb" id="baixa-modal" style="display:none">
+  <div class="md" style="max-width:380px">
+    <div class="mh"><span>Confirmar Pagamento</span><button class="mx" onclick="clsBaixa()">&#10005;</button></div>
+    <input type="hidden" id="baixa-id"/>
+    <div class="mf"><label>Data do Pagamento</label><input id="baixa-dt" type="date"/></div>
+    <div class="mf"><label>Observação</label><input id="baixa-obs" placeholder="Opcional"/></div>
+    <div class="mft"><button class="bc" onclick="clsBaixa()">Cancelar</button><button class="bsv" onclick="svBaixa()">Confirmar Pago</button></div>
+  </div>
+</div>
+
 <script>
 const SB_URL='https://xxmrdadnchxdsfinvzsp.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4bXJkYWRuY2h4ZHNmaW52enNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzI2NDgsImV4cCI6MjA5OTAwODY0OH0.vq3SGXJjmqJ68rcl-nplayx4L_xhy7VMtOAkbvlsep8';
@@ -581,9 +659,9 @@ const US=[
   {u:'montagem',p:'lab321',n:'Montagem',r:'montagem',un:'piracicaba'},
 ];
 const RS={
-  supervisor:{l:'Supervisor',c:'rb-s',se:[0,1,2,3,4,5],mv:[0,1,2,3,4,5],ca:true,cd:true,ce:true,es:true,ed:true},
-  adm:{l:'Administrador',c:'rb-a',se:[0,1,2,3,4,5],mv:[0,1,3,4,5],ca:true,cd:false,ce:true,es:true,ed:true},
-  gerente:{l:'Gerente',c:'rb-g',se:[0,1,2,3,4,5],mv:[0,1,3,4,5],ca:true,cd:false,ce:true,es:true,ed:true},
+  supervisor:{l:'Supervisor',c:'rb-s',se:[0,1,2,3,4,5],mv:[0,1,2,3,4,5],ca:true,cd:true,ce:true,es:true,ed:true,fin:true},
+  adm:{l:'Administrador',c:'rb-a',se:[0,1,2,3,4,5],mv:[0,1,3,4,5],ca:true,cd:false,ce:true,es:true,ed:true,fin:true},
+  gerente:{l:'Gerente',c:'rb-g',se:[0,1,2,3,4,5],mv:[0,1,3,4,5],ca:true,cd:false,ce:true,es:true,ed:true,fin:true},
   montagem:{l:'Montagem',c:'rb-m',se:[0,1,2,3,4,5],mv:[1,2,3],ca:false,cd:false,ce:false,es:false},
 };
 const CF=['Pedido','Aguardando montagem','Em montagem','Pronto','Avisado','Entregue'];
@@ -707,6 +785,11 @@ function doLogin(){
   const msgs={supervisor:'Supervisor — acesso total.',adm:'Administrador — cria OS e movimenta Pedido e Avisado.',gerente:'Gerente — cria OS e movimenta Pedido e Avisado.',montagem:'Montagem — acesso a Ag. montagem e Em montagem.'};
   const b=document.getElementById('ab');b.textContent=msgs[U.r];b.className='ab '+U.r;
   document.getElementById('t-e').style.display=(R&&R.es)?'block':'none';
+  // Mostra módulos financeiros se tiver permissão
+  if(R&&R.fin){
+    document.getElementById('mod-asaas').style.display='inline-block';
+    document.getElementById('mod-multi').style.display='inline-block';
+  }
   loadData();
 }
 function doLogout(){
@@ -899,6 +982,217 @@ function getPedidosExtras(){
     i++;
   }
   return pedidos;
+}
+
+
+// ── MÓDULO FINANCEIRO ─────────────────────────────────────────────────────────
+let modAtual='lab', cobFin='asaas';
+let cobsAS=[], cobsMU=[], parcelsAS=[], parcelsMU=[];
+
+function setMod(mod){
+  modAtual=mod;
+  // Atualiza botões do menu
+  ['lab','asaas','multi'].forEach(m=>{
+    const btn=document.getElementById('mod-'+m);
+    if(btn){
+      btn.style.background=mod===m?'rgba(255,255,255,.2)':'rgba(255,255,255,.08)';
+      btn.style.color=mod===m?'#fff':'rgba(255,255,255,.6)';
+      btn.style.fontWeight=mod===m?'700':'600';
+    }
+  });
+  // Mostra/oculta módulos
+  document.getElementById('as').style.display=mod==='lab'?'flex':'none';
+  document.getElementById('fin-as').style.display=mod==='asaas'?'flex':'none';
+  document.getElementById('fin-mu').style.display=mod==='multi'?'flex':'none';
+  // Mostra abas do lab só no lab
+  document.querySelector('.tabs').style.display=mod==='lab'?'flex':'none';
+  if(mod==='asaas')rnFin('asaas');
+  if(mod==='multi')rnFin('multicredito');
+}
+
+function calcParcela(){
+  const total=parseFloat(document.getElementById('cob-vtotal').value)||0;
+  const parc=parseInt(document.getElementById('cob-parc').value)||1;
+  if(total&&parc)document.getElementById('cob-vparc').value=(total/parc).toFixed(2);
+}
+
+function opNovaCob(fin){
+  cobFin=fin;
+  document.getElementById('cob-title').textContent='Nova Cobrança — '+(fin==='asaas'?'ASAAS':'Multicrédito');
+  document.getElementById('cob-fin').value=fin;
+  document.getElementById('cob-dt').value=new Date().toISOString().split('T')[0];
+  document.getElementById('cob-os').value='';
+  document.getElementById('cob-cpf').value='';
+  document.getElementById('cob-nome').value='';
+  document.getElementById('cob-tel').value='';
+  document.getElementById('cob-vtotal').value='';
+  document.getElementById('cob-parc').value='';
+  document.getElementById('cob-vparc').value='';
+  document.getElementById('cob-dt1').value='';
+  document.getElementById('cob-obs').value='';
+  document.getElementById('cob-modal').style.display='flex';
+}
+function clsCob(){document.getElementById('cob-modal').style.display='none';}
+
+async function svCob(){
+  const fin=document.getElementById('cob-fin').value;
+  const nome=document.getElementById('cob-nome').value.trim();
+  const vtotal=parseFloat(document.getElementById('cob-vtotal').value)||0;
+  const parc=parseInt(document.getElementById('cob-parc').value)||1;
+  const dt1=document.getElementById('cob-dt1').value;
+  if(!nome){alert('Preencha o nome do titular.');return;}
+  if(!vtotal){alert('Preencha o valor total.');return;}
+  if(!dt1){alert('Preencha a data da 1ª parcela.');return;}
+
+  const id='cob_'+Date.now();
+  const vparc=parseFloat((vtotal/parc).toFixed(2));
+  const un='piracicaba';
+
+  const cob={
+    id,unidade:un,financeira:fin,
+    dt_compra:document.getElementById('cob-dt').value||null,
+    os:document.getElementById('cob-os').value.trim()||null,
+    cpf:document.getElementById('cob-cpf').value.trim()||null,
+    nome,
+    telefone:document.getElementById('cob-tel').value.trim()||null,
+    valor_total:vtotal,parcelamento:parc,valor_parcela:vparc,
+    obs:document.getElementById('cob-obs').value.trim()||null,
+    status:'aberto'
+  };
+
+  // Gera parcelas com vencimento no mesmo dia
+  const parcelas=[];
+  const dt1Date=new Date(dt1+'T12:00:00');
+  const dia=dt1Date.getDate();
+  for(let i=0;i<parc;i++){
+    const dt=new Date(dt1Date);
+    dt.setMonth(dt.getMonth()+i);
+    // Mantém o mesmo dia
+    dt.setDate(Math.min(dia, new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate()));
+    parcelas.push({
+      id:'parc_'+Date.now()+'_'+i,
+      cobranca_id:id,unidade:un,financeira:fin,
+      numero:i+1,valor:vparc,
+      dt_vencimento:dt.toISOString().split('T')[0],
+      dt_pagamento:null,status:'aberto',obs:null,baixado_por:null
+    });
+  }
+
+  try{
+    await sbUpsert('cobrancas',cob);
+    for(const p of parcelas) await sbUpsert('parcelas',p);
+    clsCob();
+    rnFin(fin);
+    setSy('ok','Cobrança salva!');
+  }catch(err){setSy('e','Erro: '+err.message);}
+}
+
+function opBaixa(parcId){
+  document.getElementById('baixa-id').value=parcId;
+  document.getElementById('baixa-dt').value=new Date().toISOString().split('T')[0];
+  document.getElementById('baixa-obs').value='';
+  document.getElementById('baixa-modal').style.display='flex';
+}
+function clsBaixa(){document.getElementById('baixa-modal').style.display='none';}
+
+async function svBaixa(){
+  const id=document.getElementById('baixa-id').value;
+  const dt=document.getElementById('baixa-dt').value;
+  const obs=document.getElementById('baixa-obs').value.trim();
+  if(!dt){alert('Informe a data do pagamento.');return;}
+  try{
+    await sbPatch('parcelas',{status:'pago',dt_pagamento:dt,obs:obs||null,baixado_por:U.n},{id});
+    // Atualiza status da cobrança se todas pagas
+    clsBaixa();
+    await rnFin(cobFin);
+    setSy('ok','Baixa registrada!');
+  }catch(err){setSy('e','Erro: '+err.message);}
+}
+
+async function rnFin(fin){
+  cobFin=fin;
+  const isAS=fin==='asaas';
+  const bodyId=isAS?'as-body':'mu-body';
+  const kpisId=isAS?'as-kpis':'mu-kpis';
+  const filtroId=isAS?'as-filtro':'mu-filtro';
+  const filtro=document.getElementById(filtroId)?.value||'todos';
+  const un='piracicaba';
+
+  document.getElementById(bodyId).innerHTML='<div class="er">Carregando...</div>';
+
+  try{
+    // Carrega cobranças
+    const cobs=await sbGet('cobrancas',`unidade=eq.${un}&financeira=eq.${fin}&order=created_at.desc`);
+    const cobIds=cobs.map(c=>c.id);
+    let parcs=[];
+    if(cobIds.length>0){
+      parcs=await sbGet('parcelas',`cobranca_id=in.(${cobIds.join(',')})&order=dt_vencimento.asc`);
+    }
+
+    // Atualiza status de atrasados
+    const hoje=new Date().toISOString().split('T')[0];
+    parcs.forEach(p=>{if(p.status==='aberto'&&p.dt_vencimento<hoje)p.status='atrasado';});
+
+    // KPIs
+    const totalParcs=parcs.length;
+    const pagas=parcs.filter(p=>p.status==='pago').length;
+    const atrasadas=parcs.filter(p=>p.status==='atrasado').length;
+    const abertas=parcs.filter(p=>p.status==='aberto').length;
+    const vlAberto=parcs.filter(p=>p.status!=='pago').reduce((s,p)=>s+(p.valor||0),0);
+    const vlPago=parcs.filter(p=>p.status==='pago').reduce((s,p)=>s+(p.valor||0),0);
+
+    document.getElementById(kpisId).innerHTML=`
+      <div class="rs2"><div class="rl">Contratos</div><div class="rv v">${cobs.length}</div></div>
+      <div class="rs2"><div class="rl">Em aberto</div><div class="rv i">${abertas}</div></div>
+      <div class="rs2"><div class="rl">Atrasadas</div><div class="rv d">${atrasadas}</div></div>
+      <div class="rs2"><div class="rl">Pagas</div><div class="rv v">${pagas}</div></div>
+      <div class="rs2"><div class="rl">Vl. Em aberto</div><div class="rv d">R$ ${vlAberto.toFixed(2)}</div></div>
+      <div class="rs2"><div class="rl">Vl. Recebido</div><div class="rv v">R$ ${vlPago.toFixed(2)}</div></div>`;
+
+    // Tabela de parcelas
+    let parcsFiltradas=parcs;
+    if(filtro!=='todos')parcsFiltradas=parcs.filter(p=>p.status===filtro);
+
+    if(!parcsFiltradas.length){
+      document.getElementById(bodyId).innerHTML='<div class="er">Nenhuma parcela encontrada.</div>';
+      return;
+    }
+
+    // Agrupa por cobrança
+    const cobMap={};
+    cobs.forEach(c=>cobMap[c.id]=c);
+
+    const statusStyle={
+      aberto:'background:#EFF6FF;color:#1D4ED8',
+      atrasado:'background:#FEF2F2;color:#DC2626',
+      pago:'background:#F0FDF4;color:#16A34A'
+    };
+    const statusLabel={aberto:'Em aberto',atrasado:'Atrasado',pago:'Pago'};
+
+    document.getElementById(bodyId).innerHTML=`<table>
+      <thead><tr>
+        <th>#</th><th>Nome</th><th>OS</th><th>CPF</th><th>Parcela</th>
+        <th>Valor</th><th>Vencimento</th><th>Status</th><th>Ação</th>
+      </tr></thead>
+      <tbody>${parcsFiltradas.map((p,i)=>{
+        const cob=cobMap[p.cobranca_id]||{};
+        const venc=p.dt_vencimento?p.dt_vencimento.split('-').reverse().join('/'):'—';
+        const st=p.status==='aberto'&&p.dt_vencimento<hoje?'atrasado':p.status;
+        return`<tr>
+          <td style="color:var(--mu);font-size:11px">${i+1}</td>
+          <td style="font-weight:600">${cob.nome||'—'}</td>
+          <td style="color:var(--mu)">${cob.os||'—'}</td>
+          <td style="font-size:11px;color:var(--mu)">${cob.cpf||'—'}</td>
+          <td style="color:var(--mu)">${p.numero}/${cob.parcelamento||'?'}</td>
+          <td style="font-weight:700">R$ ${(p.valor||0).toFixed(2)}</td>
+          <td style="font-weight:${st==='atrasado'?'700':'500'};color:${st==='atrasado'?'#DC2626':'var(--tx)'}">${venc}</td>
+          <td><span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;${statusStyle[st]||statusStyle.aberto}">${statusLabel[st]||st}</span></td>
+          <td>${st!=='pago'?`<button onclick="opBaixa('${p.id}')" style="font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid rgba(27,168,160,.3);background:var(--vl);color:var(--v);cursor:pointer;font-weight:700">Baixar</button>`:'<span style="font-size:11px;color:var(--mu)">${p.dt_pagamento?p.dt_pagamento.split("-").reverse().join("/"):"—"}</span>'}</td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+  }catch(err){
+    document.getElementById(bodyId).innerHTML=`<div class="er">Erro: ${err.message}</div>`;
+  }
 }
 
 let rfId=null,mvPendId=null,editId=null;
@@ -1478,7 +1772,7 @@ function expEstCSV(){
   const b=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='estoque.csv';a.click();URL.revokeObjectURL(u);
 }
 
-['om','hm','em2','rfm','labm','npm'].forEach(id=>{document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.style.display='none';});});
+['om','hm','em2','rfm','labm','npm','cob-modal','baixa-modal'].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener('click',function(e){if(e.target===this)this.style.display='none';});});
 document.getElementById('si').addEventListener('keydown',e=>{if(e.key==='Escape')clrSrch();});
 setInterval(()=>{if(U)loadData();},30000);
 </script>
