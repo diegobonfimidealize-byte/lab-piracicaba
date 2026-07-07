@@ -632,7 +632,7 @@ tbody tr:hover{background:var(--bg);}
       <div class="mf" style="grid-column:1/-1"><label>Data da 1ª Parcela <span style="color:var(--re)">*</span></label><input id="cob-dt1" type="date"/></div>
       <div class="mf" style="grid-column:1/-1"><label>Observação</label><textarea id="cob-obs" style="width:100%;font-size:13px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--bo);background:var(--bg);color:var(--tx);font-family:inherit;outline:none;resize:vertical;min-height:70px"></textarea></div>
     </div>
-    <div class="mft"><button class="bc" onclick="clsCob()">Cancelar</button><button class="bsv" onclick="svCob()">Salvar</button></div>
+    <div class="mft"><button class="bc" onclick="clsCob()">Cancelar</button><button class="bsv" onclick="event.stopPropagation();svCob()">Salvar</button></div>
   </div>
 </div>
 
@@ -1043,10 +1043,15 @@ async function svCob(){
   if(!nome){alert('Preencha o nome do titular.');return;}
   if(!vtotal){alert('Preencha o valor total.');return;}
   if(!dt1){alert('Preencha a data da 1ª parcela.');return;}
+  if(!fin){alert('Financeira não identificada. Feche e abra novamente.');return;}
+
+  // Feedback visual
+  const btn=document.querySelector('#cob-modal .bsv');
+  if(btn){btn.textContent='Salvando...';btn.disabled=true;}
 
   const id='cob_'+Date.now();
   const vparc=parseFloat((vtotal/parc).toFixed(2));
-  const un=U.un||'piracicaba';
+  const un=U&&U.un?U.un:'piracicaba';
   const cob={
     id,unidade:un,financeira:fin,
     dt_compra:document.getElementById('cob-dt').value||null,
@@ -1059,15 +1064,13 @@ async function svCob(){
     status:'aberto'
   };
 
-  // Gera parcelas com vencimento no mesmo dia
   const parcelas=[];
   const dt1Date=new Date(dt1+'T12:00:00');
   const dia=dt1Date.getDate();
   for(let i=0;i<parc;i++){
     const dt=new Date(dt1Date);
     dt.setMonth(dt.getMonth()+i);
-    // Mantém o mesmo dia
-    dt.setDate(Math.min(dia, new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate()));
+    dt.setDate(Math.min(dia,new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate()));
     parcelas.push({
       id:'parc_'+Date.now()+'_'+i,
       cobranca_id:id,unidade:un,financeira:fin,
@@ -1081,9 +1084,15 @@ async function svCob(){
     await sbUpsert('cobrancas',cob);
     for(const p of parcelas) await sbUpsert('parcelas',p);
     clsCob();
-    rnFin(fin);
+    await rnFin(fin);
     setSy('ok','Cobrança salva!');
-  }catch(err){setSy('e','Erro: '+err.message);}
+  }catch(err){
+    console.error('svCob erro:',err);
+    alert('Erro ao salvar: '+err.message);
+    setSy('e','Erro: '+err.message);
+  }finally{
+    if(btn){btn.textContent='Salvar';btn.disabled=false;}
+  }
 }
 
 function opBaixa(parcId){
