@@ -491,7 +491,7 @@ tbody tr:hover{background:var(--bg);}
 
     <!-- Pedidos extras -->
     <div id="pedidos-extras" style="margin-top:10px"></div>
-    <button type="button" onclick="addPedidoExtra()" style="width:100%;padding:8px;font-size:12px;font-weight:600;color:var(--v);background:var(--vl);border:1.5px dashed var(--v);border-radius:10px;cursor:pointer;font-family:inherit;margin-top:6px">+ Adicionar Pedido</button>
+    <button type="button" onclick="addPedidoExtra()" style="width:100%;padding:8px;font-size:12px;font-weight:600;color:var(--v);background:var(--vl);border:1.5px dashed var(--v);border-radius:10px;cursor:pointer;font-family:inherit;margin-top:6px" id="btn-add-pedido">+ Adicionar Pedido B</button>
 
     <div class="mft"><button class="bc" onclick="clsOs()">Cancelar</button><button class="bsv" onclick="svOS()">Salvar</button></div>
   </div>
@@ -830,6 +830,11 @@ let pedidosExtrasCount = 0;
 const SUFIXOS = ['A','B','C','D','E','F','G','H'];
 
 function addPedidoExtra(){
+  // Atualiza label do botão após adicionar
+  setTimeout(()=>{
+    const btn=document.getElementById('btn-add-pedido');
+    if(btn){const sufixos=['B','C','D','E','F','G','H'];btn.textContent='+ Adicionar Pedido '+(sufixos[pedidosExtrasCount]||String(pedidosExtrasCount+2));}
+  },10);
   const container = document.getElementById('pedidos-extras');
   const idx = pedidosExtrasCount++;
   const letra = SUFIXOS[idx] || String(idx+1);
@@ -986,7 +991,7 @@ function clsH(){document.getElementById('hm').style.display='none';}
 
 function opOs(){
   editId=null;
-  pedidosExtrasCount=0;document.getElementById('pedidos-extras').innerHTML='';
+  pedidosExtrasCount=0;document.getElementById('pedidos-extras').innerHTML='';const btnAP=document.getElementById('btn-add-pedido');if(btnAP)btnAP.textContent='+ Adicionar Pedido B';
   document.getElementById('om-title').textContent='Nova ordem de serviço';
   document.getElementById('nw').style.display=R&&R.ca?'none':'block';
   ['fo','fp','fod','foe','fcd','fce'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('fobs').value='';
