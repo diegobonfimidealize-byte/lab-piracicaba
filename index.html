@@ -618,7 +618,7 @@ async function loadData(){
     ST.estoque={};
     (estoqueRows||[]).forEach(r=>{
       const k=eK(r.esf,r.cil);
-      ST.estoque[k]={esf:r.esf,cil:r.cil,qty:r.qty};
+      ST.estoque[k]={esf:r.esf,cil:r.cil,qty:r.qty,id:r.id};
     });
     setSy('ok','Sincronizado — '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
     rnKan();
@@ -802,7 +802,8 @@ async function mvCardExec(id,lab,obsmv){
         ST.estoque[k].qty--;
         const un=c.unidade||'piracicaba';
         try{
-          await sbPatch('estoque',{qty:ST.estoque[k].qty},{unidade:un,esf:e,cil:cl});
+          const eid2=k+'_'+un;
+          await sbPatch('estoque',{qty:ST.estoque[k].qty},{id:eid2});
         }catch(err){console.error('Erro baixa:',err.message);}
       }
     }
@@ -1249,6 +1250,9 @@ async function svEst(){
   try{
     // Tenta atualizar; se não existir, insere
     await sbUpsert('estoque',{id:k+'_'+un,unidade:un,esf:e,cil:c,qty:q});
+    // Confirma salvamento relendo do banco
+    const rows=await sbGet('estoque',`id=eq.${k+'_'+un}`);
+    if(rows&&rows[0])ST.estoque[k].qty=rows[0].qty;
   }catch(err){setSy('e','Erro estoque: '+err.message);}
 }
 
