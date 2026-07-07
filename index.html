@@ -528,13 +528,11 @@ tbody tr:hover{background:var(--bg);}
 
 <div class="mb" id="em2" style="display:none">
   <div class="mo" style="width:340px">
-    <h3 id="emt">Adicionar lente</h3>
+    <h3 id="emt">Atualizar lente</h3>
     <input type="hidden" id="eid"/>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div class="mf" style="margin:0"><label>Grau esférico</label><select id="fes"></select></div>
-      <div class="mf" style="margin:0"><label>Grau cilíndrico</label><select id="fci"></select></div>
-      <div class="mf" style="margin:0;grid-column:1/-1"><label>Quantidade</label><input id="fq" type="number" min="0" placeholder="0"/></div>
-    </div>
+    <div class="mf"><label>Esférico <span style="color:var(--re)">*</span></label><input id="fes" type="number" step="0.25" placeholder="Ex: -1.00"/></div>
+    <div class="mf"><label>Cilíndrico <span style="color:var(--mu);font-weight:400">(padrão 0.00)</span></label><input id="fci" type="number" step="0.25" placeholder="0.00"/></div>
+    <div class="mf"><label>Quantidade <span style="color:var(--re)">*</span></label><input id="fq" type="number" min="0" placeholder="0"/></div>
     <div class="mft"><button class="bc" onclick="clsEm()">Cancelar</button><button class="bsv" onclick="svEst()">Salvar</button></div>
   </div>
 </div>
@@ -1217,38 +1215,40 @@ function expCSV(){
 }
 
 // ── ESTOQUE ───────────────────────────────────────
-function bGO(){
-  const es=document.getElementById('fes'),ci=document.getElementById('fci');
-  es.innerHTML='';for(let g=-4;g<=4;g+=0.25){const o=document.createElement('option');o.value=g.toFixed(2);o.textContent=(g>0?'+':'')+g.toFixed(2);es.appendChild(o);}
-  ci.innerHTML='';for(let g=0;g>=-2;g-=0.25){const o=document.createElement('option');o.value=g.toFixed(2);o.textContent=g.toFixed(2);ci.appendChild(o);}
-}
+
 function opEm(id){
-  bGO();document.getElementById('eid').value=id||'';
-  if(id){const it=ST.estoque[id];const pts=id.split('_');
+  document.getElementById('eid').value=id||'';
+  if(id){
+    const it=ST.estoque[id];
+    const pts=id.split('_');
     document.getElementById('emt').textContent='Editar lente';
-    document.getElementById('fes').value=pts[0];document.getElementById('fes').disabled=true;
-    document.getElementById('fci').value=pts[1];document.getElementById('fci').disabled=true;
-    document.getElementById('fq').value=it.qty;
+    document.getElementById('fes').value=pts[0];
+    document.getElementById('fci').value=pts[1]||'0.00';
+    document.getElementById('fq').value=it?it.qty:'';
   }else{
     document.getElementById('emt').textContent='Adicionar lente';
-    document.getElementById('fes').disabled=false;document.getElementById('fci').disabled=false;
+    document.getElementById('fes').value='';
+    document.getElementById('fci').value='0.00';
     document.getElementById('fq').value='';
   }
   document.getElementById('em2').style.display='flex';
 }
-function clsEm(){document.getElementById('em2').style.display='none';['fes','fci'].forEach(id=>document.getElementById(id).disabled=false);}
+function clsEm(){document.getElementById('em2').style.display='none';}
 async function svEst(){
   const eid=document.getElementById('eid').value;
   const e=parseFloat(document.getElementById('fes').value);
-  const c=parseFloat(document.getElementById('fci').value);
+  const cVal=document.getElementById('fci').value;const c=cVal!==''?parseFloat(cVal):0;
   const q=parseInt(document.getElementById('fq').value)||0;
+  if(isNaN(e)){alert('Preencha o grau esférico.');return;}
+  if(q<=0){alert('Informe uma quantidade maior que zero.');return;}
   const k=eid||eK(e,c);
   const un='piracicaba';
-  ST.estoque[k]={esf:e,cil:c,qty:q};
+  const atual=ST.estoque[k]?ST.estoque[k].qty:0;
+  const novaQty=atual+q;
+  ST.estoque[k]={esf:e,cil:c,qty:novaQty};
   clsEm();rnEst();
   try{
-    // Tenta atualizar; se não existir, insere
-    await sbUpsert('estoque',{id:k,unidade:un,esf:e,cil:c,qty:q});
+    await sbUpsert('estoque',{id:k,unidade:un,esf:e,cil:c,qty:novaQty});
   }catch(err){setSy('e','Erro estoque: '+err.message);}
 }
 
