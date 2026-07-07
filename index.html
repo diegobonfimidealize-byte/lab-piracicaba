@@ -488,6 +488,11 @@ tbody tr:hover{background:var(--bg);}
         <textarea id="fobs-txt" placeholder="Observações adicionais..." style="width:100%;font-size:13px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--bo);background:var(--bg);color:var(--tx);font-family:inherit;outline:none;resize:vertical;min-height:60px;transition:border-color .2s"></textarea>
       </div>
     </div>
+
+    <!-- Pedidos extras -->
+    <div id="pedidos-extras" style="margin-top:10px"></div>
+    <button type="button" onclick="addPedidoExtra()" style="width:100%;padding:8px;font-size:12px;font-weight:600;color:var(--v);background:var(--vl);border:1.5px dashed var(--v);border-radius:10px;cursor:pointer;font-family:inherit;margin-top:6px">+ Adicionar Pedido</button>
+
     <div class="mft"><button class="bc" onclick="clsOs()">Cancelar</button><button class="bsv" onclick="svOS()">Salvar</button></div>
   </div>
 </div>
@@ -819,6 +824,78 @@ async function svNP(){
   await saveCard(c);
 }
 
+
+// ── PEDIDOS EXTRAS NO MODAL ───────────────────────────────
+let pedidosExtrasCount = 0;
+const SUFIXOS = ['A','B','C','D','E','F','G','H'];
+
+function addPedidoExtra(){
+  const container = document.getElementById('pedidos-extras');
+  const idx = pedidosExtrasCount++;
+  const letra = SUFIXOS[idx] || String(idx+1);
+  const div = document.createElement('div');
+  div.id = 'pe-'+idx;
+  div.style = 'border:1px solid var(--bo);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--grayL,#F0F4F8)';
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:12px;font-weight:700;color:var(--v)">Pedido ${letra}</span>
+      <button type="button" onclick="rmPedidoExtra(${idx})" style="font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid #FECACA;background:#FEF2F2;color:#DC2626;cursor:pointer">Remover</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="mf" style="margin:0;grid-column:1/-1"><label>Tipo</label>
+        <select id="pe-tipo-${idx}" onchange="peTgGrau(${idx},this.value)" style="width:100%;font-size:12px;padding:7px 10px;border-radius:8px;border:1.5px solid var(--bo);background:var(--bg);color:var(--tx);font-family:inherit;outline:none">
+          <option value="venda">Venda — Pedido</option>
+          <option value="hora">Venda — Hora</option>
+          <option value="gar-pedido">Garantia — Pedido</option>
+          <option value="gar-hora">Garantia — Hora</option>
+          <option value="gar-armacao">Garantia — Armação</option>
+          <option value="passagem">Passagem</option>
+        </select>
+      </div>
+      <div class="mf" style="margin:0;grid-column:1/-1"><label>Número do Pedido</label><input id="pe-ped-${idx}" placeholder="Ex: 114562888" style="width:100%;font-size:12px;padding:7px 10px;border-radius:8px;border:1.5px solid var(--bo);background:var(--bg);color:var(--tx);font-family:inherit;outline:none"/></div>
+      <div id="pe-grau-${idx}" style="display:none;grid-column:1/-1">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div class="mf" style="margin:0"><label style="font-size:10px">Esf. OD</label><input id="pe-od-e-${idx}" type="number" step="0.25" placeholder="0.00" style="width:100%;font-size:12px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--bo);background:var(--bg);color:var(--tx);font-family:inherit;outline:none"/></div>
+          <div class="mf" style="margin:0"><label style="font-size:10px">Cil. OD</label><input id="pe-od-c-${idx}" type="number" step="0.25" placeholder="0.00" style="width:100%;font-size:12px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--bo);background:var(--bg);color:var(--tx);font-family:inherit;outline:none"/></div>
+          <div class="mf" style="margin:0"><label style="font-size:10px">Esf. OE</label><input id="pe-oe-e-${idx}" type="number" step="0.25" placeholder="0.00" style="width:100%;font-size:12px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--bo);background:var(--bg);color:var(--tx);font-family:inherit;outline:none"/></div>
+          <div class="mf" style="margin:0"><label style="font-size:10px">Cil. OE</label><input id="pe-oe-c-${idx}" type="number" step="0.25" placeholder="0.00" style="width:100%;font-size:12px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--bo);background:var(--bg);color:var(--tx);font-family:inherit;outline:none"/></div>
+        </div>
+      </div>
+    </div>`;
+  container.appendChild(div);
+}
+
+function rmPedidoExtra(idx){
+  const el = document.getElementById('pe-'+idx);
+  if(el) el.remove();
+}
+
+function peTgGrau(idx, tipo){
+  const grau = document.getElementById('pe-grau-'+idx);
+  if(grau) grau.style.display = COM_HORA.includes(tipo) ? 'block' : 'none';
+}
+
+function getPedidosExtras(){
+  const pedidos = [];
+  const sufixos = ['A','B','C','D','E','F','G','H'];
+  let i = 0, letra_idx = 0;
+  while(i < pedidosExtrasCount){
+    const el = document.getElementById('pe-'+i);
+    if(el){
+      const tipo = document.getElementById('pe-tipo-'+i)?.value;
+      const ped = document.getElementById('pe-ped-'+i)?.value.trim()||'';
+      const esfOD = document.getElementById('pe-od-e-'+i)?.value!==''?parseFloat(document.getElementById('pe-od-e-'+i)?.value):null;
+      const cilOD = document.getElementById('pe-od-c-'+i)?.value!==''?parseFloat(document.getElementById('pe-od-c-'+i)?.value):0;
+      const esfOE = document.getElementById('pe-oe-e-'+i)?.value!==''?parseFloat(document.getElementById('pe-oe-e-'+i)?.value):null;
+      const cilOE = document.getElementById('pe-oe-c-'+i)?.value!==''?parseFloat(document.getElementById('pe-oe-c-'+i)?.value):0;
+      pedidos.push({letra:sufixos[letra_idx]||String(letra_idx+1),tipo,ped,esfOD,cilOD,esfOE,cilOE});
+      letra_idx++;
+    }
+    i++;
+  }
+  return pedidos;
+}
+
 let rfId=null,mvPendId=null,editId=null;
 function clsLab(){mvPendId=null;document.getElementById('labm').style.display='none';}
 async function svLab(){const lab=document.getElementById('flab').value;if(!lab){alert('Selecione Lab Próprio ou Lab Parceiro.');return;}const pendId=mvPendId;clsLab();await mvCardExec(pendId,lab,null);}
@@ -909,6 +986,7 @@ function clsH(){document.getElementById('hm').style.display='none';}
 
 function opOs(){
   editId=null;
+  pedidosExtrasCount=0;document.getElementById('pedidos-extras').innerHTML='';
   document.getElementById('om-title').textContent='Nova ordem de serviço';
   document.getElementById('nw').style.display=R&&R.ca?'none':'block';
   ['fo','fp','fod','foe','fcd','fce'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('fobs').value='';
@@ -1002,6 +1080,23 @@ async function svOS(){
   const c={id:'os_'+now,os,ped,tipo,dtVenda,prazo,urgente,obs,respGar,receita,obsTxt,osCompra,esfOD:esfODv,esfOE:esfOEv,cilOD:cilODv,cilOE:cilOEv,col:0,ts:now,tsCreated:now,history:[],unidade:U.un||'piracicaba'};
   const isVenda=tipo==='venda'||tipo==='hora';
   c.history.push({u:U.n,r:U.r,from:-1,to:0,at:now,mc:false,venda:isVenda,garantia:false});
+  // Adiciona pedidos extras
+  const pedidosExtras=getPedidosExtras();
+  if(pedidosExtras.length>0)c.pedidos=pedidosExtras;
+  // Baixa estoque para pedidos extras tipo hora
+  for(const p of pedidosExtras){
+    if(COM_HORA.includes(p.tipo)){
+      for(const [e,cl] of [[p.esfOD,p.cilOD||0],[p.esfOE,p.cilOE||0]]){
+        if(e===null||e===undefined)continue;
+        const k=eK(e,cl);
+        if(!ST.estoque[k])ST.estoque[k]={esf:e,cil:cl,qty:0};
+        if(ST.estoque[k].qty>0){
+          ST.estoque[k].qty--;
+          try{await sbPatch('estoque',{qty:ST.estoque[k].qty},{id:k});}catch(err){}
+        }
+      }
+    }
+  }
   ST.cards.unshift(c);clsOs();rnKan();
   await saveCard(c);
 }
