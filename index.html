@@ -1221,10 +1221,10 @@ function opEm(id){
   if(id){
     const it=ST.estoque[id];
     const pts=id.split('_');
-    document.getElementById('emt').textContent='Editar lente';
+    document.getElementById('emt').textContent='Adicionar quantidade';
     document.getElementById('fes').value=pts[0];
     document.getElementById('fci').value=pts[1]||'0.00';
-    document.getElementById('fq').value=it?it.qty:'';
+    document.getElementById('fq').value='';
   }else{
     document.getElementById('emt').textContent='Adicionar lente';
     document.getElementById('fes').value='';
