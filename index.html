@@ -565,25 +565,33 @@ let U=null,R=null,ST={cards:[],estoque:{}},srch='',per='h',relR=[],filtroUrg=fal
 
 // ── FIREBASE REST API ──────────────────────────────
 // ── SUPABASE API ──────────────────────────────
-const SB_HEADERS={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=representation'};
+const SB_H={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
 async function sbGet(table,params=''){
-  const r=await fetch(`${SB_URL}/rest/v1/${table}?${params}`,{headers:SB_HEADERS});
-  if(!r.ok)throw new Error(`sbGet ${table} ${r.status}`);
+  const r=await fetch(`${SB_URL}/rest/v1/${table}?${params}`,{headers:SB_H});
+  if(!r.ok){const t=await r.text();throw new Error(`GET ${table} ${r.status}: ${t}`);}
   return r.json();
 }
 async function sbUpsert(table,data){
-  const r=await fetch(`${SB_URL}/rest/v1/${table}`,{method:'POST',headers:{...SB_HEADERS,'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(data)});
-  if(!r.ok){const t=await r.text();throw new Error(`sbUpsert ${table} ${r.status}: ${t}`);}
+  const r=await fetch(`${SB_URL}/rest/v1/${table}`,{
+    method:'POST',
+    headers:{...SB_H,'Prefer':'resolution=merge-duplicates,return=minimal'},
+    body:JSON.stringify(Array.isArray(data)?data:[data])
+  });
+  if(!r.ok){const t=await r.text();throw new Error(`UPSERT ${table} ${r.status}: ${t}`);}
 }
 async function sbPatch(table,data,match){
-  const params=Object.entries(match).map(([k,v])=>`${k}=eq.${v}`).join('&');
-  const r=await fetch(`${SB_URL}/rest/v1/${table}?${params}`,{method:'PATCH',headers:{...SB_HEADERS,'Prefer':'return=minimal'},body:JSON.stringify(data)});
-  if(!r.ok){const t=await r.text();throw new Error(`sbPatch ${table} ${r.status}: ${t}`);}
+  const params=Object.entries(match).map(([k,v])=>`${k}=eq.${encodeURIComponent(v)}`).join('&');
+  const r=await fetch(`${SB_URL}/rest/v1/${table}?${params}`,{
+    method:'PATCH',
+    headers:{...SB_H,'Prefer':'return=minimal'},
+    body:JSON.stringify(data)
+  });
+  if(!r.ok){const t=await r.text();throw new Error(`PATCH ${table} ${r.status}: ${t}`);}
 }
 async function sbDelete(table,match){
-  const params=Object.entries(match).map(([k,v])=>`${k}=eq.${v}`).join('&');
-  const r=await fetch(`${SB_URL}/rest/v1/${table}?${params}`,{method:'DELETE',headers:SB_HEADERS});
-  if(!r.ok)throw new Error(`sbDelete ${table} ${r.status}`);
+  const params=Object.entries(match).map(([k,v])=>`${k}=eq.${encodeURIComponent(v)}`).join('&');
+  const r=await fetch(`${SB_URL}/rest/v1/${table}?${params}`,{method:'DELETE',headers:SB_H});
+  if(!r.ok){const t=await r.text();throw new Error(`DELETE ${table} ${r.status}: ${t}`);}
 }
 
 function setSy(s,m){
@@ -595,22 +603,28 @@ function setSy(s,m){
 async function loadData(){
   setSy('l','Sincronizando...');
   try{
-    const data=await fbGet('');
-    if(!data){
-      // Primeira vez — inicializa com estoque da planilha
-      await fbSet('estoque',ESTINIT);
-      await fbSet('cards',{});
-      ST={cards:[],estoque:ESTINIT};
-    } else {
-      const rawCards=data.cards||{};
-      const allCards=Object.values(rawCards).sort((a,b)=>(b.tsCreated||b.ts)-(a.tsCreated||a.ts));
-      ST.cards=U.un==='central'?allCards:allCards.filter(c=>!c.unidade||c.unidade===U.un);
-      ST.estoque=data.estoque&&Object.keys(data.estoque).length>0?data.estoque:ESTINIT;
-    }
+    const unFilter=U.un==='central'?'':'&unidade=eq.'+U.un;
+    const cards=await sbGet('os_cards','order=ts_created.desc'+unFilter);
+    ST.cards=(cards||[]).map(r=>({
+      id:r.id,unidade:r.unidade,os:r.os,ped:r.ped,tipo:r.tipo,
+      dtVenda:r.dt_venda,prazo:r.prazo,urgente:r.urgente,col:r.col,
+      lab:r.lab,obs:r.obs,respGar:r.resp_gar,receita:r.receita,
+      obsTxt:r.obs_txt,osCompra:r.os_compra,
+      esfOD:r.esf_od,cilOD:r.cil_od,esfOE:r.esf_oe,cilOE:r.cil_oe,
+      refeito:r.refeito,motivoRefeito:r.motivo_refeito,
+      history:r.history||[],ts:r.ts,tsCreated:r.ts_created
+    }));
+    const estoqueRows=await sbGet('estoque','order=esf.asc'+unFilter);
+    ST.estoque={};
+    (estoqueRows||[]).forEach(r=>{
+      const k=eK(r.esf,r.cil);
+      ST.estoque[k]={esf:r.esf,cil:r.cil,qty:r.qty};
+    });
     setSy('ok','Sincronizado — '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
     rnKan();
   }catch(e){
-    setSy('e','Erro de conexão...');
+    console.error('loadData ERRO:',e.message);
+    setSy('e','Erro: '+e.message);
     setTimeout(loadData,5000);
   }
 }
@@ -786,15 +800,12 @@ async function mvCardExec(id,lab,obsmv){
       if(!ST.estoque[k])ST.estoque[k]={esf:e,cil:cl,qty:0};
       if(ST.estoque[k].qty>0){
         ST.estoque[k].qty--;
+        const un=c.unidade||'piracicaba';
         try{
-          await fbSet(`estoque/${k}`,ST.estoque[k]);
-          // Recarrega estoque do Firebase para garantir sincronia
-          const updated=await fbGet(`estoque/${k}`);
-          if(updated)ST.estoque[k]=updated;
-        }catch(err){console.error('Erro baixa estoque:',err);}
+          await sbPatch('estoque',{qty:ST.estoque[k].qty},{unidade:un,esf:e,cil:cl});
+        }catch(err){console.error('Erro baixa:',err.message);}
       }
     }
-    // Atualiza tela do estoque se estiver aberta
     if(document.getElementById('es')&&document.getElementById('es').style.display!=='none')rnEst();
   }
   rnKan();
