@@ -242,7 +242,7 @@ tbody tr:hover{background:var(--bg);}
   <nav class="nb">
     <div class="nb-l">
       <div style="display:flex;gap:4px;margin-right:12px">
-        <button id="mod-lab" onclick="setMod('lab')" style="font-size:11px;padding:5px 12px;border-radius:8px;border:none;background:rgba(255,255,255,.2);color:#fff;cursor:pointer;font-weight:700;font-family:inherit">Lab</button>
+        <button id="mod-lab" onclick="setMod('lab')" style="font-size:11px;padding:5px 12px;border-radius:8px;border:none;background:rgba(255,255,255,.2);color:#fff;cursor:pointer;font-weight:700;font-family:inherit">Laboratório</button>
         <button id="mod-asaas" onclick="setMod('asaas')" style="font-size:11px;padding:5px 12px;border-radius:8px;border:none;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);cursor:pointer;font-weight:600;font-family:inherit;display:none">ASAAS</button>
         <button id="mod-multi" onclick="setMod('multi')" style="font-size:11px;padding:5px 12px;border-radius:8px;border:none;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);cursor:pointer;font-weight:600;font-family:inherit;display:none">Multicrédito</button>
       </div></div>
@@ -786,9 +786,14 @@ function doLogin(){
   const b=document.getElementById('ab');b.textContent=msgs[U.r];b.className='ab '+U.r;
   document.getElementById('t-e').style.display=(R&&R.es)?'block':'none';
   // Mostra módulos financeiros se tiver permissão
+  const btnAS=document.getElementById('mod-asaas');
+  const btnMU=document.getElementById('mod-multi');
   if(R&&R.fin){
-    document.getElementById('mod-asaas').style.display='inline-block';
-    document.getElementById('mod-multi').style.display='inline-block';
+    if(btnAS)btnAS.style.display='inline-block';
+    if(btnMU)btnMU.style.display='inline-block';
+  } else {
+    if(btnAS)btnAS.style.display='none';
+    if(btnMU)btnMU.style.display='none';
   }
   loadData();
 }
@@ -991,21 +996,26 @@ let cobsAS=[], cobsMU=[], parcelsAS=[], parcelsMU=[];
 
 function setMod(mod){
   modAtual=mod;
-  // Atualiza botões do menu
+  // Atualiza botões do menu — sempre visíveis
   ['lab','asaas','multi'].forEach(m=>{
     const btn=document.getElementById('mod-'+m);
     if(btn){
-      btn.style.background=mod===m?'rgba(255,255,255,.2)':'rgba(255,255,255,.08)';
-      btn.style.color=mod===m?'#fff':'rgba(255,255,255,.6)';
-      btn.style.fontWeight=mod===m?'700':'600';
+      btn.style.background=mod===m?'rgba(255,255,255,.25)':'rgba(255,255,255,.08)';
+      btn.style.color=mod===m?'#fff':'rgba(255,255,255,.55)';
+      btn.style.fontWeight=mod===m?'700':'500';
+      btn.style.border=mod===m?'1px solid rgba(255,255,255,.3)':'1px solid transparent';
     }
   });
   // Mostra/oculta módulos
-  document.getElementById('as').style.display=mod==='lab'?'flex':'none';
-  document.getElementById('fin-as').style.display=mod==='asaas'?'flex':'none';
-  document.getElementById('fin-mu').style.display=mod==='multi'?'flex':'none';
-  // Mostra abas do lab só no lab
-  document.querySelector('.tabs').style.display=mod==='lab'?'flex':'none';
+  const asEl=document.getElementById('as');
+  const finAsEl=document.getElementById('fin-as');
+  const finMuEl=document.getElementById('fin-mu');
+  if(asEl)asEl.style.display=mod==='lab'?'flex':'none';
+  if(finAsEl)finAsEl.style.display=mod==='asaas'?'flex':'none';
+  if(finMuEl)finMuEl.style.display=mod==='multi'?'flex':'none';
+  // Abas internas do lab só no lab
+  const tabsEl=document.querySelector('.tabs');
+  if(tabsEl)tabsEl.style.display=mod==='lab'?'flex':'none';
   if(mod==='asaas')rnFin('asaas');
   if(mod==='multi')rnFin('multicredito');
 }
