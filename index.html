@@ -2033,6 +2033,7 @@ function rnKan(){
   if(srch){srbb.className='srb show';srbt.textContent=mi.size===0?`Nenhuma OS para "${srch}"`:`${mi.size} OS encontrada${mi.size>1?'s':''} para "${srch}"`;}
   else{srbb.className='srb';}
   CF.forEach((name,ci)=>{
+    if(ci===5)return; // Entregue vai para Histórico
     const cs=R.se.includes(ci);
     const col=document.createElement('div');col.className='co'+(ci===5?' co-en':'')+(!cs?' co-lk':'');
     const cc=ST.cards.filter(c=>c.col===ci);t+=cc.length;
