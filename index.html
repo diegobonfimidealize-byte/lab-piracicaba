@@ -425,6 +425,7 @@ tbody tr:hover{background:var(--bg);}
           <option value="aberto">Em aberto</option>
           <option value="atrasado">Atrasados</option>
           <option value="pago">Pagos</option>
+          <option value="cancelado">Cancelados</option>
         </select>
         <div style="display:flex;gap:4px">
           <input type="date" id="cr-dt-ini" onchange="rnCr()" style="font-size:11px;padding:5px 8px;border:1.5px solid var(--bo);border-radius:8px;background:var(--w);color:var(--tx);font-family:inherit;outline:none"/>
@@ -702,6 +703,7 @@ tbody tr:hover{background:var(--bg);}
     <div class="mft">
       <button class="bc" onclick="clsCrDet()">Fechar</button>
       <button id="cr-det-edit-btn" class="bsv" style="background:#1D4ED8;border-color:#1D4ED8;display:none" onclick="opEditCr(window._crDetId)">Editar Contrato</button>
+      <button id="cr-det-cancel-btn" class="bsv" style="background:#DC2626;border-color:#DC2626;display:none" onclick="opCancelarCr(window._crDetId)">Cancelar Contrato</button>
       <button class="bsv" style="background:#16A34A;border-color:#16A34A" onclick="expCrPDF()">Exportar PDF</button>
     </div>
   </div>
@@ -1166,8 +1168,8 @@ async function rnCr(){
       return;
     }
 
-    const stStyle={aberto:'background:#EFF6FF;color:#1D4ED8',atrasado:'background:#FEF2F2;color:#DC2626',pago:'background:#F0FDF4;color:#16A34A'};
-    const stLabel={aberto:'Em aberto',atrasado:'Atrasado',pago:'Pago'};
+    const stStyle={aberto:'background:#EFF6FF;color:#1D4ED8',atrasado:'background:#FEF2F2;color:#DC2626',pago:'background:#F0FDF4;color:#16A34A',cancelado:'background:#F1F5F9;color:#64748B'};
+    const stLabel={aberto:'Em aberto',atrasado:'Atrasado',pago:'Pago',cancelado:'Cancelado'};
     const finLabel={multicredito:'Multicrédito',asaas:'ASAAS'};
     const finColor={multicredito:'background:#EDE9FE;color:#5B21B6',asaas:'background:#E0F2FE;color:#0369A1'};
 
@@ -1210,16 +1212,18 @@ async function opCrDet(cid){
       sbGet('crediario_parcelas',`crediario_id=eq.${cid}&order=numero.asc`)
     ]);
     const c=contratos[0];if(!c)return;
-    document.getElementById('cr-det-title').textContent=c.nome+(c.os?' — '+c.os:'');
+    document.getElementById('cr-det-title').textContent=c.nome+(c.os?' — '+c.os:'')+(c.status==='cancelado'?' [CANCELADO]':'');
     const crEditBtn=document.getElementById('cr-det-edit-btn');
     if(crEditBtn)crEditBtn.style.display=R&&R.ed?'inline-block':'none';
+    const crCancelBtn=document.getElementById('cr-det-cancel-btn');
+    if(crCancelBtn)crCancelBtn.style.display=R&&R.ed&&c.status!=='cancelado'?'inline-block':'none';
     window._crDetId=cid;
     window._crDetData={c,parcs};
 
     const hoje=new Date().toISOString().split('T')[0];
     parcs.forEach(p=>{if(p.status==='aberto'&&p.dt_vencimento<hoje)p.status='atrasado';});
-    const stStyle={aberto:'background:#EFF6FF;color:#1D4ED8',atrasado:'background:#FEF2F2;color:#DC2626',pago:'background:#F0FDF4;color:#16A34A'};
-    const stLabel={aberto:'Em aberto',atrasado:'Atrasado',pago:'Pago'};
+    const stStyle={aberto:'background:#EFF6FF;color:#1D4ED8',atrasado:'background:#FEF2F2;color:#DC2626',pago:'background:#F0FDF4;color:#16A34A',cancelado:'background:#F1F5F9;color:#64748B'};
+    const stLabel={aberto:'Em aberto',atrasado:'Atrasado',pago:'Pago',cancelado:'Cancelado'};
     const finLabel={multicredito:'Multicrédito',asaas:'ASAAS'};
 
     document.getElementById('cr-det-body').innerHTML=`
@@ -1892,6 +1896,19 @@ function expHsPDF(){
   abrirPDF('Histórico de Entregas', kpis+tabela);
 }
 
+
+async function opCancelarCr(cid){
+  if(!confirm('Tem certeza que deseja cancelar este contrato? Esta ação ficará registrada no histórico.'))return;
+  const c=window._crDetData?.c;
+  const hist=(c?.historico||[]);
+  hist.push({u:U.n,at:new Date().toISOString(),acao:'Cancelou o contrato'});
+  try{
+    await sbPatch('crediario',{status:'cancelado',historico:hist},{id:cid});
+    await opCrDet(cid);
+    await rnCr();
+    setSy('ok','Contrato cancelado.');
+  }catch(err){alert('Erro: '+err.message);}
+}
 
 function opEditCr(cid){
   document.getElementById('cr-detalhe-modal').style.display='none';
