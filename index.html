@@ -611,22 +611,28 @@ function setSy(s,m){
 async function loadData(){
   setSy('l','Sincronizando...');
   try{
-    const data=await fbGet('');
-    if(!data){
-      // Primeira vez — inicializa com estoque da planilha
-      await fbSet('estoque',ESTINIT);
-      await fbSet('cards',{});
-      ST={cards:[],estoque:ESTINIT};
-    } else {
-      const rawCards=data.cards||{};
-      const allCards=Object.values(rawCards).sort((a,b)=>(b.tsCreated||b.ts)-(a.tsCreated||a.ts));
-      ST.cards=U.un==='central'?allCards:allCards.filter(c=>!c.unidade||c.unidade===U.un);
-      ST.estoque=data.estoque&&Object.keys(data.estoque).length>0?data.estoque:ESTINIT;
-    }
+    const unFilter=U.un==='central'?'':'&unidade=eq.'+U.un;
+    const cards=await sbGet('os_cards','order=ts_created.desc'+unFilter);
+    ST.cards=(cards||[]).map(r=>({
+      id:r.id,unidade:r.unidade,os:r.os,ped:r.ped,tipo:r.tipo,
+      dtVenda:r.dt_venda,prazo:r.prazo,urgente:r.urgente,col:r.col,
+      lab:r.lab,obs:r.obs,respGar:r.resp_gar,receita:r.receita,
+      obsTxt:r.obs_txt,osCompra:r.os_compra,
+      esfOD:r.esf_od,cilOD:r.cil_od,esfOE:r.esf_oe,cilOE:r.cil_oe,
+      refeito:r.refeito,motivoRefeito:r.motivo_refeito,
+      obsAlert:r.obs_alert,pedidos:r.pedidos||[],
+      history:r.history||[],ts:r.ts,tsCreated:r.ts_created
+    }));
+    const estoqueRows=await sbGet('estoque','order=esf.asc'+unFilter);
+    ST.estoque={};
+    (estoqueRows||[]).forEach(r=>{
+      const k=eK(r.esf,r.cil);
+      ST.estoque[k]={esf:r.esf,cil:r.cil,qty:r.qty,id:k};
+    });
     setSy('ok','Sincronizado — '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
     rnKan();
   }catch(e){
-    setSy('e','Erro de conexão...');
+    setSy('e','Erro: '+e.message);
     setTimeout(loadData,5000);
   }
 }
@@ -800,11 +806,8 @@ async function mvCardExec(id,lab,obsmv){
       if(ST.estoque[k].qty>0){
         ST.estoque[k].qty--;
         try{
-          await fbSet(`estoque/${k}`,ST.estoque[k]);
-          // Recarrega estoque do Firebase para garantir sincronia
-          const updated=await fbGet(`estoque/${k}`);
-          if(updated)ST.estoque[k]=updated;
-        }catch(err){console.error('Erro baixa estoque:',err);}
+          await sbPatch('estoque',{qty:ST.estoque[k].qty},{id:k});
+        }catch(err){console.error('Erro baixa estoque:',err.message);}
       }
     }
     // Atualiza tela do estoque se estiver aberta
