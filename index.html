@@ -756,6 +756,18 @@ async function saveEstoque(){}
 // ── LOGIN ──────────────────────────────────────────
 document.getElementById('lp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('lu').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('lp').focus();});
+// Restaura sessão salva
+(function(){
+  try{
+    const saved=localStorage.getItem('idealize_session');
+    if(saved){
+      const {u,p}=JSON.parse(saved);
+      document.getElementById('lu').value=u;
+      document.getElementById('lp').value=p;
+      doLogin();
+    }
+  }catch(e){localStorage.removeItem('idealize_session');}
+})();
 
 function doLogin(){
   const u=document.getElementById('lu').value.trim().toLowerCase();
