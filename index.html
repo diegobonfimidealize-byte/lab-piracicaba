@@ -650,7 +650,8 @@ tbody tr:hover{background:var(--bg);}
   <div class="md" style="max-width:580px;width:95vw;max-height:92vh;overflow-y:auto">
     <div class="mh"><span id="cr-modal-title">Novo Crediário</span><button class="mx" onclick="clsNovoCr()">&#10005;</button></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="mf" style="grid-column:1/-1"><label>Nome Completo <span style="color:var(--re)">*</span></label><input id="cr-nome" placeholder="Nome completo do cliente"/></div>
+      <div class="mf"><label>Nome Completo <span style="color:var(--re)">*</span></label><input id="cr-nome" placeholder="Nome completo do cliente"/></div>
+      <div class="mf"><label>CPF</label><input id="cr-cpf" placeholder="000.000.000-00" maxlength="14"/></div>
       <div class="mf"><label>Ordem de Serviço</label><input id="cr-os" placeholder="Ex: 4546"/></div>
       <div class="mf"><label>Financeira <span style="color:var(--re)">*</span></label>
         <select id="cr-fin-novo">
