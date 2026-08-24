@@ -415,6 +415,10 @@ tbody tr:hover{background:var(--bg);}
     <div class="rh">
       <span class="rt">Crediário</span>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="pb active" id="cr-ph" onclick="setPerCr('h')">Hoje</button>
+        <button class="pb" id="cr-ps" onclick="setPerCr('s')">Esta semana</button>
+        <button class="pb" id="cr-pm" onclick="setPerCr('m')">Este mês</button>
+        <button class="pb" id="cr-ptd" onclick="setPerCr('td')">Todos</button>
         <select id="cr-fin" onchange="rnCr()" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--bo);border-radius:8px;background:var(--w);color:var(--tx);font-family:inherit;outline:none;font-weight:600">
           <option value="todos">Todas as financeiras</option>
           <option value="multicredito">Multicrédito</option>
@@ -754,7 +758,8 @@ tbody tr:hover{background:var(--bg);}
     <div class="mh"><span>Editar Contrato</span><button class="mx" onclick="clsEditCr()">&#10005;</button></div>
     <input type="hidden" id="cr-edit-id"/>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="mf" style="grid-column:1/-1"><label>Nome Completo <span style="color:var(--re)">*</span></label><input id="cr-edit-nome" placeholder="Nome completo"/></div>
+      <div class="mf"><label>Nome Completo <span style="color:var(--re)">*</span></label><input id="cr-edit-nome" placeholder="Nome completo"/></div>
+      <div class="mf"><label>CPF</label><input id="cr-edit-cpf" placeholder="000.000.000-00" maxlength="14"/></div>
       <div class="mf"><label>OS</label><input id="cr-edit-os" placeholder="Nº da OS"/></div>
       <div class="mf"><label>Financeira</label>
         <select id="cr-edit-fin">
@@ -997,11 +1002,39 @@ function tgFiltro(tipo){
 }
 
 // ── CREDIÁRIO ─────────────────────────────────────────────────────────────────
-let crParcelas=[];
+let crParcelas=[], perCr='td';
+
+function setPerCr(p){
+  perCr=p;
+  ['h','s','m','td'].forEach(x=>{
+    const el=document.getElementById('cr-p'+x);
+    if(el)el.className='pb'+(p===x?' active':'');
+  });
+  rnCr();
+}
+
+function getRangeCr(){
+  const n=new Date();
+  if(perCr==='td')return{ini:null,fim:null};
+  let ini,fim;
+  if(perCr==='h'){
+    ini=new Date(n.getFullYear(),n.getMonth(),n.getDate(),0,0,0);
+    fim=new Date(n.getFullYear(),n.getMonth(),n.getDate(),23,59,59);
+  } else if(perCr==='s'){
+    const dw=n.getDay();
+    ini=new Date(n);ini.setDate(n.getDate()-dw);ini.setHours(0,0,0,0);
+    fim=new Date(ini);fim.setDate(ini.getDate()+6);fim.setHours(23,59,59);
+  } else if(perCr==='m'){
+    ini=new Date(n.getFullYear(),n.getMonth(),1,0,0,0);
+    fim=new Date(n.getFullYear(),n.getMonth()+1,0,23,59,59);
+  }
+  return{ini:ini.toISOString().split('T')[0],fim:fim.toISOString().split('T')[0]};
+}
 
 function opNovoCr(){
   crParcelas=[];
   document.getElementById('cr-nome').value='';
+  document.getElementById('cr-cpf').value='';
   document.getElementById('cr-os').value='';
   document.getElementById('cr-fin-novo').value='multicredito';
   document.getElementById('cr-vcompra').value='';
@@ -1071,7 +1104,8 @@ async function svNovoCr(){
 
   const contrato={
     id,unidade:un,financeira:fin,
-    nome,os:document.getElementById('cr-os').value.trim()||null,
+    nome,cpf:document.getElementById('cr-cpf').value.trim()||null,
+    os:document.getElementById('cr-os').value.trim()||null,
     valor_compra:vcompra,valor_crediario:vcred,
     valor_entrada:ventrada,
     dt_entrada:document.getElementById('cr-dtentrada').value||null,
@@ -1117,8 +1151,11 @@ async function rnCr(){
   if(btnNovo)btnNovo.style.display=R&&R.ed?'block':'none';
 
   try{
+    const {ini:crIni,fim:crFim}=getRangeCr();
     let params=`unidade=eq.${un}&order=created_at.desc`;
     if(finFiltro!=='todos')params+=`&financeira=eq.${finFiltro}`;
+    if(crIni)params+=`&created_at=gte.${crIni}`;
+    if(crFim)params+=`&created_at=lte.${crFim}T23:59:59`;
     const contratos=await sbGet('crediario',params);
 
     // Carrega parcelas
@@ -1185,7 +1222,7 @@ async function rnCr(){
         const st=pagas===cParcs.length&&cParcs.length?'pago':atras?'atrasado':'aberto';
         return`<tr>
           <td style="color:var(--mu);font-size:11px">${i+1}</td>
-          <td style="font-weight:700">${c.nome}</td>
+          <td style="font-weight:700">${c.nome}<br><span style="font-size:10px;color:var(--mu);font-weight:400">${c.cpf||''}</span></td>
           <td style="color:var(--mu)">${c.os||'—'}</td>
           <td><span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;${finColor[c.financeira]||''}">${finLabel[c.financeira]||c.financeira}</span></td>
           <td style="font-weight:700">R$ ${(c.valor_crediario||0).toFixed(2)}</td>
@@ -1230,6 +1267,7 @@ async function opCrDet(cid){
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;padding:12px;background:var(--bg);border-radius:10px">
         <div><div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase">Nome</div><div style="font-weight:700">${c.nome}</div></div>
         <div><div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase">OS</div><div>${c.os||'—'}</div></div>
+        <div><div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase">CPF</div><div>${c.cpf||'—'}</div></div>
         <div><div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase">Financeira</div><div style="font-weight:600">${finLabel[c.financeira]||c.financeira}</div></div>
         <div><div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase">Vl. Compra</div><div>R$ ${(c.valor_compra||0).toFixed(2)}</div></div>
         <div><div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase">Vl. Crediário</div><div style="font-weight:700;color:var(--v)">R$ ${(c.valor_crediario||0).toFixed(2)}</div></div>
@@ -1917,6 +1955,7 @@ function opEditCr(cid){
   const c=contratos;
   document.getElementById('cr-edit-id').value=cid;
   document.getElementById('cr-edit-nome').value=c.nome||'';
+  document.getElementById('cr-edit-cpf').value=c.cpf||'';
   document.getElementById('cr-edit-os').value=c.os||'';
   document.getElementById('cr-edit-fin').value=c.financeira||'multicredito';
   document.getElementById('cr-edit-vcompra').value=c.valor_compra||'';
@@ -1955,6 +1994,7 @@ async function svEditCr(){
   try{
     await sbPatch('crediario',{
       nome,
+      cpf:document.getElementById('cr-edit-cpf').value.trim()||null,
       os:document.getElementById('cr-edit-os').value.trim()||null,
       financeira:document.getElementById('cr-edit-fin').value,
       valor_compra:parseFloat(document.getElementById('cr-edit-vcompra').value)||null,
