@@ -348,7 +348,7 @@ tbody tr:hover{background:var(--bg);}
     </div>
     <div class="rsum" id="g-motivos" style="flex-wrap:wrap;margin-top:.5rem"></div>
     <div class="tw">
-      <div class="th2"><span class="tt" id="gtt">Garantias de hoje</span><button class="bex" onclick="expGarCSV()">Exportar CSV</button></div>
+      <div class="th2"><span class="tt" id="gtt">Garantias de hoje</span><button class="bex" onclick="expGarCSV()">CSV</button><button class="bex" style="margin-left:6px;background:#FEF3E2;color:#C05E0A;border-color:rgba(245,154,42,.3)" onclick="expGarPDF()">PDF</button></div>
       <div id="gb2"><div class="er">Selecione um período.</div></div>
     </div>
   </div>
@@ -378,7 +378,7 @@ tbody tr:hover{background:var(--bg);}
       <div class="rs2"><div class="rl">Passagem</div><div class="rv" style="color:#7C3AED" id="rf4">0</div></div>
     </div>
     <div class="tw">
-      <div class="th2"><span class="tt" id="r2tt">Refeitos de hoje</span><button class="bex" onclick="expRefCSV()">Exportar CSV</button></div>
+      <div class="th2"><span class="tt" id="r2tt">Refeitos de hoje</span><button class="bex" onclick="expRefCSV()">CSV</button><button class="bex" style="margin-left:6px;background:#FEF3E2;color:#C05E0A;border-color:rgba(245,154,42,.3)" onclick="expRefPDF()">PDF</button></div>
       <div id="r2b"><div class="er">Nenhum refeito neste período.</div></div>
     </div>
   </div>
@@ -404,7 +404,7 @@ tbody tr:hover{background:var(--bg);}
       <div class="rs2"><div class="rl">Atrasadas</div><div class="rv d" id="pz4">0</div></div>
     </div>
     <div class="tw">
-      <div class="th2"><span class="tt">Ordenado por prazo mais próximo</span><button class="bex" onclick="expPrazosCSV()">Exportar CSV</button></div>
+      <div class="th2"><span class="tt">Ordenado por prazo mais próximo</span><button class="bex" onclick="expPrazosCSV()">CSV</button><button class="bex" style="margin-left:6px;background:#FEF3E2;color:#C05E0A;border-color:rgba(245,154,42,.3)" onclick="expPrazosPDF()">PDF</button></div>
       <div id="pzb"><div class="er">Carregando...</div></div>
     </div>
   </div>
@@ -445,7 +445,7 @@ tbody tr:hover{background:var(--bg);}
       <div class="rs2"><div class="rl">Zerados</div><div class="rv d" id="e3">0</div></div>
     </div>
     <div class="tw">
-      <div class="th2"><span class="tt">Lentes por grau</span><button class="bex" onclick="expEstCSV()">Exportar CSV</button></div>
+      <div class="th2"><span class="tt">Lentes por grau</span><button class="bex" onclick="expEstCSV()">CSV</button><button class="bex" style="margin-left:6px;background:#FEF3E2;color:#C05E0A;border-color:rgba(245,154,42,.3)" onclick="expEstPDF()">PDF</button></div>
       <div id="etb"><div class="er">Carregando...</div></div>
     </div>
   </div>
@@ -1216,6 +1216,121 @@ function expCrPDF(){
   <script>window.onload=()=>window.print();<\/script>
   </body></html>`);
   w.document.close();
+}
+
+
+// ── EXPORTAR PDF GENÉRICO ────────────────────────────────────────────────────
+function abrirPDF(titulo, conteudoHTML){
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>${titulo}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Arial,sans-serif;font-size:12px;color:#1A1A1A;padding:24px}
+    .header{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #1BA8A0;padding-bottom:10px;margin-bottom:16px}
+    .brand{font-size:20px;font-weight:800;color:#1BA8A0}
+    .sub{font-size:10px;color:#64748B;margin-top:2px}
+    table{width:100%;border-collapse:collapse;margin-top:8px;font-size:11px}
+    th{font-size:10px;font-weight:800;color:#64748B;text-align:left;padding:6px 8px;background:#F0F4F8;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid #E2E8F0}
+    td{padding:6px 8px;border-bottom:1px solid #E2E8F0}
+    tr:hover{background:#F8FAFC}
+    .kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .kpi{background:#F0F4F8;border-radius:8px;padding:10px 14px;min-width:110px}
+    .kpi-label{font-size:9px;color:#64748B;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+    .kpi-val{font-size:20px;font-weight:800;color:#1BA8A0;margin-top:2px}
+    .badge{font-size:10px;padding:2px 7px;border-radius:5px;font-weight:700}
+    .footer{margin-top:16px;border-top:1px solid #E2E8F0;padding-top:8px;font-size:10px;color:#64748B;display:flex;justify-content:space-between}
+    @media print{body{padding:12px}.no-print{display:none}}
+  </style></head><body>
+  <div class="header">
+    <div><div class="brand">Óticas Idealize</div><div class="sub">${titulo}</div></div>
+    <div style="text-align:right"><div class="sub">Emitido em: ${new Date().toLocaleDateString('pt-BR')}</div><div class="sub">${U?U.n:''}</div></div>
+  </div>
+  ${conteudoHTML}
+  <div class="footer"><span>Óticas Idealize — Sistema de Laboratório</span><span>${new Date().toLocaleString('pt-BR')}</span></div>
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+// PDF Montagens
+function expRelPDF(){
+  if(!relR.length){alert('Nenhum dado para exportar.');return;}
+  const kpis=`<div class="kpis">
+    <div class="kpi"><div class="kpi-label">Total</div><div class="kpi-val">${relR.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Venda Pedido</div><div class="kpi-val">${relR.filter(r=>r.tipo==='venda').length}</div></div>
+    <div class="kpi"><div class="kpi-label">Venda Hora</div><div class="kpi-val">${relR.filter(r=>r.tipo==='hora').length}</div></div>
+    <div class="kpi"><div class="kpi-label">Garantias</div><div class="kpi-val">${relR.filter(r=>r.tipo&&r.tipo.startsWith('gar')).length}</div></div>
+  </div>`;
+  const tabela=`<table><thead><tr><th>#</th><th>OS</th><th>Pedido</th><th>Tipo</th><th>Responsável</th><th>Data</th></tr></thead>
+  <tbody>${relR.map((r,i)=>`<tr><td>${i+1}</td><td><b>${r.os}</b></td><td>${r.ped||'—'}</td><td>${tGL(r.tipo)}</td><td>${r.u}</td><td>${fd(r.at)}</td></tr>`).join('')}</tbody></table>`;
+  abrirPDF('Relatório de Montagens', kpis+tabela);
+}
+
+// PDF Garantias
+function expGarPDF(){
+  if(!garR.length){alert('Nenhum dado para exportar.');return;}
+  const kpis=`<div class="kpis">
+    <div class="kpi"><div class="kpi-label">Total</div><div class="kpi-val">${garR.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Gar. Hora</div><div class="kpi-val">${garR.filter(r=>r.tipo==='gar-hora').length}</div></div>
+    <div class="kpi"><div class="kpi-label">Gar. Pedido</div><div class="kpi-val">${garR.filter(r=>r.tipo==='gar-pedido').length}</div></div>
+    <div class="kpi"><div class="kpi-label">Gar. Armação</div><div class="kpi-val">${garR.filter(r=>r.tipo==='gar-armacao').length}</div></div>
+  </div>`;
+  const CF2=['Pedido','Ag. montagem','Em montagem','Pronto','Avisado','Entregue'];
+  const tabela=`<table><thead><tr><th>#</th><th>OS</th><th>Pedido</th><th>Tipo</th><th>Motivo</th><th>Resp.</th><th>OS Compra</th><th>Status</th><th>Data</th></tr></thead>
+  <tbody>${garR.map((r,i)=>`<tr><td>${i+1}</td><td><b>${r.os}</b></td><td>${r.ped}</td><td>${tGL(r.tipo)}</td><td>${r.obs||'—'}</td><td>${r.respGar||'—'}</td><td>${r.osCompra||'—'}</td><td>${CF2[r.col]||'—'}</td><td>${fd(r.at)}</td></tr>`).join('')}</tbody></table>`;
+  abrirPDF('Relatório de Garantias', kpis+tabela);
+}
+
+// PDF Refeitos
+function expRefPDF(){
+  if(!refR.length){alert('Nenhum dado para exportar.');return;}
+  const CF2=['Pedido','Ag. montagem','Em montagem','Pronto','Avisado','Entregue'];
+  const kpis=`<div class="kpis">
+    <div class="kpi"><div class="kpi-label">Total Refeitos</div><div class="kpi-val">${refR.length}</div></div>
+  </div>`;
+  const tabela=`<table><thead><tr><th>#</th><th>OS</th><th>Pedido</th><th>Tipo</th><th>Motivo do Refazer</th><th>Por</th><th>Status</th><th>Data</th></tr></thead>
+  <tbody>${refR.map((r,i)=>`<tr><td>${i+1}</td><td><b>${r.os}</b></td><td>${r.ped}</td><td>${tGL(r.tipo)}</td><td style="color:#DC2626;font-weight:600">${r.motivo}</td><td>${r.u}</td><td>${CF2[r.col]||'—'}</td><td>${fd(r.at)}</td></tr>`).join('')}</tbody></table>`;
+  abrirPDF('Relatório de Refeitos', kpis+tabela);
+}
+
+// PDF Prazos
+function expPrazosPDF(){
+  if(!prazosData.length){alert('Nenhum dado para exportar.');return;}
+  const CF2=['Pedido','Ag. montagem','Em montagem','Pronto','Avisado','Entregue'];
+  const kpis=`<div class="kpis">
+    <div class="kpi"><div class="kpi-label">Total</div><div class="kpi-val">${prazosData.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Atrasadas</div><div class="kpi-val" style="color:#DC2626">${prazosData.filter(c=>c._diff<0).length}</div></div>
+    <div class="kpi"><div class="kpi-label">Vence hoje</div><div class="kpi-val" style="color:#DC2626">${prazosData.filter(c=>c._diff===0).length}</div></div>
+  </div>`;
+  const tabela=`<table><thead><tr><th>#</th><th>OS</th><th>Pedido</th><th>Tipo</th><th>Venda</th><th>Prazo</th><th>Situação</th><th>Coluna</th></tr></thead>
+  <tbody>${prazosData.map((c,i)=>{
+    const sit=c._diff<0?'ATRASADA '+Math.abs(c._diff)+'d':c._diff===0?'VENCE HOJE':c._diff===1?'VENCE AMANHÃ':'Em '+c._diff+' dias';
+    return`<tr><td>${i+1}</td><td><b>${c.os}</b></td><td>${c.ped||'—'}</td><td>${tGL(c.tipo)}</td><td>${c.dtVenda?c.dtVenda.split('-').reverse().join('/'):'—'}</td><td style="font-weight:700">${c.prazo?c.prazo.split('-').reverse().join('/'):'—'}</td><td style="color:${c._diff<=0?'#DC2626':c._diff===1?'#92400E':'#0D7A75'};font-weight:700">${sit}</td><td>${CF2[c.col]||'—'}</td></tr>`;
+  }).join('')}</tbody></table>`;
+  abrirPDF('Relatório de Prazos', kpis+tabela);
+}
+
+// PDF Estoque
+function expEstPDF(){
+  const itens=Object.values(ST.estoque).sort((a,b)=>a.esf-b.esf||(a.cil-b.cil));
+  if(!itens.length){alert('Estoque vazio.');return;}
+  const total=itens.reduce((s,i)=>s+i.qty,0);
+  const zerados=itens.filter(i=>i.qty===0).length;
+  const baixos=itens.filter(i=>i.qty>0&&i.qty<=3).length;
+  const kpis=`<div class="kpis">
+    <div class="kpi"><div class="kpi-label">Total lentes</div><div class="kpi-val">${total}</div></div>
+    <div class="kpi"><div class="kpi-label">Tipos</div><div class="kpi-val">${itens.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Repor (≤3)</div><div class="kpi-val" style="color:#DC2626">${baixos}</div></div>
+    <div class="kpi"><div class="kpi-label">Zerados</div><div class="kpi-val" style="color:#DC2626">${zerados}</div></div>
+  </div>`;
+  const tabela=`<table><thead><tr><th>Esférico</th><th>Cilíndrico</th><th>Quantidade</th><th>Status</th></tr></thead>
+  <tbody>${itens.map(i=>{
+    const st=i.qty===0?'Zerado':i.qty<=3?'Repor':'OK';
+    const cor=i.qty===0?'#DC2626':i.qty<=3?'#D97706':'#16A34A';
+    return`<tr><td>${i.esf>=0?'+':''}${Number(i.esf).toFixed(2)}</td><td>${Number(i.cil).toFixed(2)}</td><td><b>${i.qty}</b></td><td style="color:${cor};font-weight:700">${st}</td></tr>`;
+  }).join('')}</tbody></table>`;
+  abrirPDF('Relatório de Estoque', kpis+tabela);
 }
 
 let rfId=null,mvPendId=null,editId=null;
