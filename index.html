@@ -508,7 +508,7 @@ tbody tr:hover{background:var(--bg);}
       <div class="rs2"><div class="rl">Zerados</div><div class="rv d" id="e3">0</div></div>
     </div>
     <div class="tw">
-      <div class="th2"><span class="tt">Lentes por grau</span><button class="bex" onclick="expEstCSV()">CSV</button><button class="bex" style="margin-left:6px;background:#FEF3E2;color:#C05E0A;border-color:rgba(245,154,42,.3)" onclick="expEstPDF()">PDF</button></div>
+      <div class="th2"><span class="tt">Lentes por grau</span><div style="display:flex;gap:6px"><button class="bex" onclick="expEstCSV()">CSV</button><button class="bex" style="background:#FEF3E2;color:#C05E0A;border-color:rgba(245,154,42,.3)" onclick="expEstPDF()">PDF</button><button class="bex" style="background:#FEF2F2;color:#DC2626;border-color:#FECACA;font-weight:700" onclick="expListaPedidoPDF()">Lista p/ Pedir</button></div></div>
       <div id="etb"><div class="er">Carregando...</div></div>
     </div>
   </div>
@@ -1432,6 +1432,33 @@ function expPrazosPDF(){
 }
 
 // PDF Estoque
+function expListaPedidoPDF(){
+  const itens=Object.values(ST.estoque).filter(i=>i.qty<=3).sort((a,b)=>a.qty-b.qty||(a.esf-b.esf)||(a.cil-b.cil));
+  if(!itens.length){alert('Nenhuma lente abaixo de 3 unidades!');return;}
+  const zerados=itens.filter(i=>i.qty===0);
+  const baixos=itens.filter(i=>i.qty>0&&i.qty<=3);
+  const kpis=`<div class="kpis">
+    <div class="kpi"><div class="kpi-label">Total p/ Pedir</div><div class="kpi-val" style="color:#DC2626">${itens.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Zeradas</div><div class="kpi-val" style="color:#DC2626">${zerados.length}</div></div>
+    <div class="kpi"><div class="kpi-label">Abaixo de 3</div><div class="kpi-val" style="color:#D97706">${baixos.length}</div></div>
+  </div>`;
+  const tabela=`<table><thead><tr><th>#</th><th>Esférico</th><th>Cilíndrico</th><th>Qtd. Atual</th><th>Status</th><th>Qtd. a Pedir</th></tr></thead>
+  <tbody>${itens.map((i,n)=>{
+    const esf=(i.esf>=0?'+':'')+Number(i.esf).toFixed(2);
+    const cil=Number(i.cil).toFixed(2);
+    const st=i.qty===0?'ZERADA':'REPOR';
+    const cor=i.qty===0?'#DC2626':'#D97706';
+    return`<tr>
+      <td style="color:#64748B">${n+1}</td>
+      <td><b>${esf}</b></td><td>${cil}</td>
+      <td style="color:${cor};font-weight:700">${i.qty}</td>
+      <td><span style="font-size:10px;padding:2px 8px;border-radius:5px;background:${i.qty===0?'#FEF2F2':'#FEF3C7'};color:${cor};font-weight:700">${st}</span></td>
+      <td style="border-bottom:1px solid #94A3B8;min-width:80px">&nbsp;</td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+  abrirPDF('Lista de Lentes para Pedir', kpis+tabela);
+}
+
 function expEstPDF(){
   const itens=Object.values(ST.estoque).sort((a,b)=>a.esf-b.esf||(a.cil-b.cil));
   if(!itens.length){alert('Estoque vazio.');return;}
