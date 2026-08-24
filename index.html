@@ -618,7 +618,7 @@ tbody tr:hover{background:var(--bg);}
 </div>
 
 <!-- Modal Baixa Parcela -->
-<div class="mb" id="cr-baixa-modal" style="display:none">
+<div class="mb" id="cr-baixa-modal" style="display:none;z-index:300">
   <div class="md" style="max-width:380px">
     <div class="mh"><span>Confirmar Pagamento</span><button class="mx" onclick="clsCrBaixa()">&#10005;</button></div>
     <input type="hidden" id="cr-baixa-id"/>
@@ -1121,12 +1121,17 @@ async function opCrDet(cid){
 function clsCrDet(){document.getElementById('cr-detalhe-modal').style.display='none';}
 
 function opCrBaixa(pid){
+  document.getElementById('cr-detalhe-modal').style.display='none';
   document.getElementById('cr-baixa-id').value=pid;
   document.getElementById('cr-baixa-dt').value=new Date().toISOString().split('T')[0];
   document.getElementById('cr-baixa-obs').value='';
   document.getElementById('cr-baixa-modal').style.display='flex';
 }
-function clsCrBaixa(){document.getElementById('cr-baixa-modal').style.display='none';}
+function clsCrBaixa(){
+  document.getElementById('cr-baixa-modal').style.display='none';
+  // Reabre o detalhe se estava aberto
+  if(window._crDetId)document.getElementById('cr-detalhe-modal').style.display='flex';
+}
 
 async function svCrBaixa(){
   const pid=document.getElementById('cr-baixa-id').value;
