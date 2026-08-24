@@ -252,6 +252,7 @@ tbody tr:hover{background:var(--bg);}
         <button class="tab" id="t-pz" onclick="sw('pz')">Prazos</button>
         <button class="tab" id="t-cr" onclick="sw('cr')" style="display:none">Crediário</button>
         <button class="tab" id="t-ig" onclick="sw('ig')" style="display:none">Indique e Ganhe</button>
+        <button class="tab" id="t-hs" onclick="sw('hs')">Histórico</button>
         <button class="tab" id="t-e" onclick="sw('e')" style="display:none">Estoque</button>
       </div>
       <div class="av" id="av"></div>
@@ -463,6 +464,38 @@ tbody tr:hover{background:var(--bg);}
         </div>
       </div>
       <div id="ig-body"><div class="er">Carregando...</div></div>
+    </div>
+  </div>
+
+  <div id="hss" class="rm" style="display:none">
+    <div class="rh">
+      <span class="rt">Histórico de Entregas</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="pb active" id="hs-ph" onclick="setPerHS('h')">Hoje</button>
+        <button class="pb" id="hs-ps" onclick="setPerHS('s')">Esta semana</button>
+        <button class="pb" id="hs-pm" onclick="setPerHS('m')">Este mês</button>
+        <button class="pb" id="hs-pc" onclick="setPerHS('c')">Personalizado</button>
+        <div id="hs-cd" style="display:none;gap:6px;align-items:center">
+          <input type="date" id="hs-di" style="font-size:11px;padding:5px 8px;border:1.5px solid var(--bo);border-radius:8px;background:var(--w);color:var(--tx);font-family:inherit;outline:none"/>
+          <input type="date" id="hs-df" style="font-size:11px;padding:5px 8px;border:1.5px solid var(--bo);border-radius:8px;background:var(--w);color:var(--tx);font-family:inherit;outline:none"/>
+          <button class="bf" onclick="rnHist()">Filtrar</button>
+        </div>
+        <div class="sw" style="position:relative">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="hs-busca" placeholder="Buscar OS..." oninput="rnHist()" style="padding:7px 10px 7px 32px;font-size:12px;border:1.5px solid var(--bo);border-radius:10px;background:var(--w);color:var(--tx);font-family:inherit;outline:none;width:160px"/>
+        </div>
+      </div>
+    </div>
+    <div class="rsum" id="hs-kpis"></div>
+    <div class="tw">
+      <div class="th2">
+        <span class="tt" id="hs-tt">Entregas de hoje</span>
+        <div style="display:flex;gap:6px">
+          <button class="bex" onclick="expHsCSV()">CSV</button>
+          <button class="bex" style="background:#FEF3E2;color:#C05E0A;border-color:rgba(245,154,42,.3)" onclick="expHsPDF()">PDF</button>
+        </div>
+      </div>
+      <div id="hs-body"><div class="er">Carregando...</div></div>
     </div>
   </div>
 
@@ -723,14 +756,14 @@ const US=[
   {u:'posvendas',p:'pos321',n:'Pós-vendas',r:'posvendas',un:'piracicaba'},
 ];
 const RS={
-  supervisor:{l:'Supervisor',c:'rb-s',se:[0,1,2,3,4,5],mv:[0,1,2,3,4,5],ca:true,cd:true,ce:true,es:true,ed:true},
-  adm:{l:'Administrador',c:'rb-a',se:[0,1,2,3,4,5],mv:[0,1,3,4,5],ca:true,cd:false,ce:true,es:true,ed:true},
-  gerente:{l:'Gerente',c:'rb-g',se:[0,1,2,3,4,5],mv:[0,1,3,4,5],ca:true,cd:false,ce:true,es:true,ed:true},
-  posvendas:{l:'Pós-vendas',c:'rb-p',se:[0,1,2,3,4,5],mv:[],ca:false,cd:false,ce:false,es:false,ed:false},
-  montagem:{l:'Montagem',c:'rb-m',se:[0,1,2,3,4,5],mv:[1,2,3],ca:false,cd:false,ce:false,es:false},
+  supervisor:{l:'Supervisor',c:'rb-s',se:[0,1,2,3,4],mv:[0,1,2,3,4,5],ca:true,cd:true,ce:true,es:true,ed:true},
+  adm:{l:'Administrador',c:'rb-a',se:[0,1,2,3,4],mv:[0,1,3,4,5],ca:true,cd:false,ce:true,es:true,ed:true},
+  gerente:{l:'Gerente',c:'rb-g',se:[0,1,2,3,4],mv:[0,1,3,4,5],ca:true,cd:false,ce:true,es:true,ed:true},
+  posvendas:{l:'Pós-vendas',c:'rb-p',se:[0,1,2,3,4],mv:[],ca:false,cd:false,ce:false,es:false,ed:false},
+  montagem:{l:'Montagem',c:'rb-m',se:[0,1,2,3,4],mv:[1,2,3],ca:false,cd:false,ce:false,es:false},
 };
-const CF=['Pedido','Aguardando montagem','Em montagem','Pronto','Avisado','Entregue'];
-const CS=['Pedido','Ag. montagem','Em montagem','Pronto','Avisado','Entregue'];
+const CF=['Pedido','Aguardando montagem','Em montagem','Pronto','Avisado','Entregue']; // mantido para histórico
+const CS=['Pedido','Ag. montagem','Em montagem','Pronto','Avisado'];
 const COM_GRAU=['hora','gar-hora','gar-estoque'];
 const COM_BAIXA=['hora','gar-hora','gar-estoque'];
 
@@ -871,14 +904,14 @@ function doLogout(){
 
 // ── TABS ──────────────────────────────────────────
 function sw(tab){
-  const map={k:'ks',r:'rs',g:'gs',r2:'r2s',pz:'pzs',cr:'crs',ig:'igs',e:'es'};
+  const map={k:'ks',r:'rs',g:'gs',r2:'r2s',pz:'pzs',cr:'crs',ig:'igs',hs:'hss',e:'es'};
   // Primeiro esconde tudo
   Object.values(map).forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.style.display='none';
   });
   // Atualiza abas
-  ['k','r','g','r2','pz','cr','ig','e'].forEach(t=>{
+  ['k','r','g','r2','pz','cr','ig','hs','e'].forEach(t=>{
     const tb=document.getElementById('t-'+t);
     if(tb)tb.className='tab'+(tab===t?' active':'');
   });
@@ -894,6 +927,7 @@ function sw(tab){
   if(tab==='pz')rnPrazos();
   if(tab==='cr')rnCr();
   if(tab==='ig')rnIG();
+  if(tab==='hs')rnHist();
   if(tab==='e')rnEst();
 }
 
@@ -1613,6 +1647,163 @@ function expIGPDF(){
     <td><b>${r.premio==='pix'?'PIX — R$ 50,00':'Óculos de Sol'}</b></td>
   </tr>`).join('')}</tbody></table>`;
   abrirPDF('Relatório — Indique e Ganhe', kpis+tabela);
+}
+
+
+// ── HISTÓRICO DE ENTREGAS ────────────────────────────────────────────────────
+let perHS='h', hsData=[];
+
+function setPerHS(p){
+  perHS=p;
+  ['h','s','m','c'].forEach(x=>{
+    const el=document.getElementById('hs-p'+x);
+    if(el)el.className='pb'+(p===x?' active':'');
+  });
+  const cd=document.getElementById('hs-cd');
+  if(cd)cd.style.display=p==='c'?'flex':'none';
+  if(p!=='c')rnHist();
+}
+
+function getRangeHS(){
+  const n=new Date();
+  let ini,fim;
+  if(perHS==='h'){
+    ini=new Date(n.getFullYear(),n.getMonth(),n.getDate(),0,0,0);
+    fim=new Date(n.getFullYear(),n.getMonth(),n.getDate(),23,59,59);
+  } else if(perHS==='s'){
+    const dw=n.getDay();
+    ini=new Date(n);ini.setDate(n.getDate()-dw);ini.setHours(0,0,0,0);
+    fim=new Date(ini);fim.setDate(ini.getDate()+6);fim.setHours(23,59,59);
+  } else if(perHS==='m'){
+    ini=new Date(n.getFullYear(),n.getMonth(),1,0,0,0);
+    fim=new Date(n.getFullYear(),n.getMonth()+1,0,23,59,59);
+  } else {
+    const vi=document.getElementById('hs-di')?.value;
+    const vf=document.getElementById('hs-df')?.value;
+    ini=vi?new Date(vi+'T00:00:00'):new Date(0);
+    fim=vf?new Date(vf+'T23:59:59'):new Date();
+  }
+  return{ini:ini.getTime(),fim:fim.getTime()};
+}
+
+async function rnHist(){
+  const un=U&&U.un?U.un:'piracicaba';
+  const {ini,fim}=getRangeHS();
+  const busca=(document.getElementById('hs-busca')?.value||'').toLowerCase();
+  const lbs={h:'Entregas de hoje',s:'Entregas desta semana',m:'Entregas deste mês',c:'Período personalizado'};
+  const ttEl=document.getElementById('hs-tt');
+  if(ttEl)ttEl.textContent=lbs[perHS];
+  const body=document.getElementById('hs-body');
+  if(body)body.innerHTML='<div class="er">Carregando...</div>';
+
+  try{
+    // Busca cards entregues (col=5) do Supabase
+    const unFilter=un==='central'?'':'&unidade=eq.'+un;
+    const cards=await sbGet('os_cards','col=eq.5&order=ts.desc'+unFilter);
+
+    // Filtra por período e busca
+    hsData=(cards||[]).filter(c=>{
+      // Pega o timestamp da última movimentação (entrega)
+      const hist=c.history||[];
+      const entrega=hist.filter(h=>h.to===5).pop();
+      const at=entrega?entrega.at:c.ts;
+      if(at<ini||at>fim)return false;
+      if(busca&&!(c.os||'').toLowerCase().includes(busca))return false;
+      return true;
+    }).map(c=>{
+      const hist=c.history||[];
+      const entrega=hist.filter(h=>h.to===5).pop();
+      return{...c,_entregaAt:entrega?entrega.at:c.ts,_entregaPor:entrega?entrega.u:'—'};
+    }).sort((a,b)=>b._entregaAt-a._entregaAt);
+
+    // KPIs
+    const total=hsData.length;
+    const vendas=hsData.filter(c=>c.tipo==='venda'||c.tipo==='hora').length;
+    const garantias=hsData.filter(c=>c.tipo&&c.tipo.startsWith('gar')).length;
+    const refeitos=hsData.filter(c=>c.refeito).length;
+
+    const kpis=document.getElementById('hs-kpis');
+    if(kpis)kpis.innerHTML=`
+      <div class="rs2"><div class="rl">Total Entregues</div><div class="rv v">${total}</div></div>
+      <div class="rs2"><div class="rl">Vendas</div><div class="rv i">${vendas}</div></div>
+      <div class="rs2"><div class="rl">Garantias</div><div class="rv w">${garantias}</div></div>
+      <div class="rs2"><div class="rl">Refeitos</div><div class="rv d">${refeitos}</div></div>`;
+
+    if(!hsData.length){
+      if(body)body.innerHTML='<div class="er">Nenhuma entrega neste período.</div>';
+      return;
+    }
+
+    const fmtDt=ts=>ts?new Date(ts).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+
+    if(body)body.innerHTML=`<table>
+      <thead><tr>
+        <th>#</th><th>OS</th><th>Pedido</th><th>Tipo</th><th>Dt. Venda</th><th>Prazo</th>
+        <th>Grau OD</th><th>Grau OE</th><th>Lab</th><th>Refeito</th><th>Entregue por</th><th>Data Entrega</th>
+      </tr></thead>
+      <tbody>${hsData.map((c,i)=>{
+        const dtVenda=c.dt_venda?c.dt_venda.split('-').reverse().join('/'):'—';
+        const prazo=c.prazo?c.prazo.split('-').reverse().join('/'):'—';
+        const grauOD=c.esf_od!=null?`${c.esf_od>=0?'+':''}${Number(c.esf_od).toFixed(2)} / ${Number(c.cil_od||0).toFixed(2)}`:'—';
+        const grauOE=c.esf_oe!=null?`${c.esf_oe>=0?'+':''}${Number(c.esf_oe).toFixed(2)} / ${Number(c.cil_oe||0).toFixed(2)}`:'—';
+        return`<tr>
+          <td style="color:var(--mu);font-size:11px">${i+1}</td>
+          <td style="font-weight:800">${c.os||'—'}</td>
+          <td style="color:var(--mu);font-family:monospace;font-size:11px">${c.ped||'—'}</td>
+          <td><span class="bg2 ${tGC(c.tipo)}">${tGL(c.tipo)}</span></td>
+          <td style="color:var(--mu)">${dtVenda}</td>
+          <td style="color:var(--mu)">${prazo}</td>
+          <td style="font-size:11px">${grauOD}</td>
+          <td style="font-size:11px">${grauOE}</td>
+          <td style="color:var(--mu)">${c.lab||'—'}</td>
+          <td>${c.refeito?'<span style="font-size:10px;padding:2px 6px;border-radius:5px;background:#FEE2E2;color:#DC2626;font-weight:700">Sim</span>':'—'}</td>
+          <td style="color:var(--mu)">${c._entregaPor}</td>
+          <td style="color:var(--mu);white-space:nowrap">${fmtDt(c._entregaAt)}</td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+  }catch(err){
+    if(body)body.innerHTML=`<div class="er">Erro: ${err.message}</div>`;
+  }
+}
+
+function expHsCSV(){
+  if(!hsData.length){alert('Nenhum dado.');return;}
+  const fmtDt=ts=>ts?new Date(ts).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'}):'';
+  const csv=['OS,Pedido,Tipo,Dt.Venda,Prazo,Grau.OD,Grau.OE,Lab,Refeito,Entregue Por,Data Entrega',
+    ...hsData.map(c=>[
+      c.os,c.ped||'',tGL(c.tipo),c.dt_venda||'',c.prazo||'',
+      c.esf_od!=null?c.esf_od+'/'+c.cil_od:'',
+      c.esf_oe!=null?c.esf_oe+'/'+c.cil_oe:'',
+      c.lab||'',c.refeito?'Sim':'Não',c._entregaPor,fmtDt(c._entregaAt)
+    ].join(','))
+  ].join('\n');
+  const b=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const u=URL.createObjectURL(b);const a=document.createElement('a');
+  a.href=u;a.download='historico_entregas.csv';a.click();URL.revokeObjectURL(u);
+}
+
+function expHsPDF(){
+  if(!hsData.length){alert('Nenhum dado.');return;}
+  const total=hsData.length;
+  const vendas=hsData.filter(c=>c.tipo==='venda'||c.tipo==='hora').length;
+  const garantias=hsData.filter(c=>c.tipo&&c.tipo.startsWith('gar')).length;
+  const fmtDt=ts=>ts?new Date(ts).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+  const kpis=`<div class="kpis">
+    <div class="kpi"><div class="kpi-label">Total</div><div class="kpi-val">${total}</div></div>
+    <div class="kpi"><div class="kpi-label">Vendas</div><div class="kpi-val">${vendas}</div></div>
+    <div class="kpi"><div class="kpi-label">Garantias</div><div class="kpi-val">${garantias}</div></div>
+  </div>`;
+  const tabela=`<table><thead><tr>
+    <th>#</th><th>OS</th><th>Pedido</th><th>Tipo</th><th>Prazo</th><th>Grau OD</th><th>Grau OE</th><th>Lab</th><th>Entregue Por</th><th>Data Entrega</th>
+  </tr></thead><tbody>${hsData.map((c,i)=>`<tr>
+    <td>${i+1}</td><td><b>${c.os||'—'}</b></td><td>${c.ped||'—'}</td>
+    <td>${tGL(c.tipo)}</td>
+    <td>${c.prazo?c.prazo.split('-').reverse().join('/'):'—'}</td>
+    <td>${c.esf_od!=null?Number(c.esf_od).toFixed(2)+'/'+Number(c.cil_od||0).toFixed(2):'—'}</td>
+    <td>${c.esf_oe!=null?Number(c.esf_oe).toFixed(2)+'/'+Number(c.cil_oe||0).toFixed(2):'—'}</td>
+    <td>${c.lab||'—'}</td><td>${c._entregaPor}</td><td>${fmtDt(c._entregaAt)}</td>
+  </tr>`).join('')}</tbody></table>`;
+  abrirPDF('Histórico de Entregas', kpis+tabela);
 }
 
 let rfId=null,mvPendId=null,editId=null;
