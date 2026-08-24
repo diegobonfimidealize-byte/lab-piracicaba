@@ -250,6 +250,7 @@ tbody tr:hover{background:var(--bg);}
         <button class="tab" id="t-g" onclick="sw('g')">Garantias</button>
         <button class="tab" id="t-r2" onclick="sw('r2')">Refeitos</button>
         <button class="tab" id="t-pz" onclick="sw('pz')">Prazos</button>
+        <button class="tab" id="t-cr" onclick="sw('cr')" style="display:none">Crediário</button>
         <button class="tab" id="t-e" onclick="sw('e')" style="display:none">Estoque</button>
       </div>
       <div class="av" id="av"></div>
@@ -408,6 +409,33 @@ tbody tr:hover{background:var(--bg);}
     </div>
   </div>
 
+  <div id="crs" class="rm" style="display:none">
+    <div class="rh">
+      <span class="rt">Crediário</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="cr-fin" onchange="rnCr()" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--bo);border-radius:8px;background:var(--w);color:var(--tx);font-family:inherit;outline:none;font-weight:600">
+          <option value="todos">Todas as financeiras</option>
+          <option value="multicredito">Multicrédito</option>
+          <option value="asaas">ASAAS</option>
+        </select>
+        <select id="cr-status" onchange="rnCr()" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--bo);border-radius:8px;background:var(--w);color:var(--tx);font-family:inherit;outline:none">
+          <option value="todos">Todos os status</option>
+          <option value="aberto">Em aberto</option>
+          <option value="atrasado">Atrasados</option>
+          <option value="pago">Pagos</option>
+        </select>
+        <div style="display:flex;gap:4px">
+          <input type="date" id="cr-dt-ini" onchange="rnCr()" style="font-size:11px;padding:5px 8px;border:1.5px solid var(--bo);border-radius:8px;background:var(--w);color:var(--tx);font-family:inherit;outline:none"/>
+          <input type="date" id="cr-dt-fim" onchange="rnCr()" style="font-size:11px;padding:5px 8px;border:1.5px solid var(--bo);border-radius:8px;background:var(--w);color:var(--tx);font-family:inherit;outline:none"/>
+        </div>
+        <input id="cr-busca" type="text" placeholder="Buscar nome ou OS..." oninput="rnCr()" style="font-size:12px;padding:6px 10px;border:1.5px solid var(--bo);border-radius:8px;background:var(--w);color:var(--tx);font-family:inherit;outline:none;width:180px"/>
+        <button id="cr-novo-btn" onclick="opNovoCr()" style="font-size:12px;padding:7px 16px;border-radius:9px;border:none;background:var(--v);color:#fff;cursor:pointer;font-weight:700;font-family:inherit;display:none">+ Novo Crediário</button>
+      </div>
+    </div>
+    <div class="rsum" id="cr-kpis"></div>
+    <div class="tw"><div id="cr-body"><div class="er">Carregando...</div></div></div>
+  </div>
+
   <div id="es" class="rm" style="display:none">
     <div class="rh"><span class="rt">Estoque de Lentes</span><div id="ea"></div></div>
     <div class="rsum">
@@ -548,6 +576,73 @@ tbody tr:hover{background:var(--bg);}
   </div>
 </div>
 
+
+<!-- Modal Novo Crediário -->
+<div class="mb" id="cr-modal" style="display:none">
+  <div class="md" style="max-width:580px;width:95vw;max-height:92vh;overflow-y:auto">
+    <div class="mh"><span id="cr-modal-title">Novo Crediário</span><button class="mx" onclick="clsNovoCr()">&#10005;</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="mf" style="grid-column:1/-1"><label>Nome Completo <span style="color:var(--re)">*</span></label><input id="cr-nome" placeholder="Nome completo do cliente"/></div>
+      <div class="mf"><label>Ordem de Serviço</label><input id="cr-os" placeholder="Ex: 4546"/></div>
+      <div class="mf"><label>Financeira <span style="color:var(--re)">*</span></label>
+        <select id="cr-fin-novo">
+          <option value="multicredito">Multicrédito</option>
+          <option value="asaas">ASAAS</option>
+        </select>
+      </div>
+      <div class="mf"><label>Valor da Compra <span style="color:var(--re)">*</span></label><input id="cr-vcompra" type="number" step="0.01" placeholder="0.00"/></div>
+      <div class="mf"><label>Valor Crediário <span style="color:var(--re)">*</span></label><input id="cr-vcred" type="number" step="0.01" placeholder="0.00"/></div>
+      <div class="mf"><label>Valor Entrada</label><input id="cr-ventrada" type="number" step="0.01" placeholder="0.00 (opcional)"/></div>
+      <div class="mf"><label>Data da Entrada</label><input id="cr-dtentrada" type="date"/></div>
+    </div>
+
+    <!-- Parcelas -->
+    <div style="margin-top:14px;border-top:1px solid var(--bo);padding-top:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:700;color:var(--tx)">Parcelas</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="cr-nparc" type="number" min="1" max="60" placeholder="Nº parcelas" style="width:100px;font-size:12px;padding:5px 8px;border:1.5px solid var(--bo);border-radius:8px;background:var(--bg);color:var(--tx);font-family:inherit;outline:none"/>
+          <input id="cr-dt1parc" type="date" style="font-size:12px;padding:5px 8px;border:1.5px solid var(--bo);border-radius:8px;background:var(--bg);color:var(--tx);font-family:inherit;outline:none"/>
+          <button onclick="gerarParcelas()" style="font-size:11px;padding:5px 12px;border-radius:8px;border:none;background:var(--v);color:#fff;cursor:pointer;font-weight:700;font-family:inherit">Gerar</button>
+        </div>
+      </div>
+      <div id="cr-parcelas-lista" style="max-height:220px;overflow-y:auto"></div>
+      <button onclick="addParcManual()" style="width:100%;margin-top:6px;padding:6px;font-size:11px;font-weight:600;color:var(--v);background:var(--vl);border:1.5px dashed var(--v);border-radius:8px;cursor:pointer;font-family:inherit">+ Adicionar parcela manualmente</button>
+    </div>
+
+    <div class="mft" style="margin-top:14px">
+      <button class="bc" onclick="clsNovoCr()">Cancelar</button>
+      <button class="bsv" onclick="event.stopPropagation();svNovoCr()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Baixa Parcela -->
+<div class="mb" id="cr-baixa-modal" style="display:none">
+  <div class="md" style="max-width:380px">
+    <div class="mh"><span>Confirmar Pagamento</span><button class="mx" onclick="clsCrBaixa()">&#10005;</button></div>
+    <input type="hidden" id="cr-baixa-id"/>
+    <div class="mf"><label>Data do Pagamento</label><input id="cr-baixa-dt" type="date"/></div>
+    <div class="mf"><label>Observação</label><input id="cr-baixa-obs" placeholder="Opcional"/></div>
+    <div class="mft">
+      <button class="bc" onclick="clsCrBaixa()">Cancelar</button>
+      <button class="bsv" onclick="svCrBaixa()">Confirmar Pago</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalhe Contrato -->
+<div class="mb" id="cr-detalhe-modal" style="display:none">
+  <div class="md" style="max-width:600px;width:95vw;max-height:92vh;overflow-y:auto">
+    <div class="mh"><span id="cr-det-title">Contrato</span><button class="mx" onclick="clsCrDet()">&#10005;</button></div>
+    <div id="cr-det-body"></div>
+    <div class="mft">
+      <button class="bc" onclick="clsCrDet()">Fechar</button>
+      <button class="bsv" style="background:#16A34A;border-color:#16A34A" onclick="expCrPDF()">Exportar PDF</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SB_URL='https://xxmrdadnchxdsfinvzsp.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4bXJkYWRuY2h4ZHNmaW52enNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzI2NDgsImV4cCI6MjA5OTAwODY0OH0.vq3SGXJjmqJ68rcl-nplayx4L_xhy7VMtOAkbvlsep8';
@@ -682,6 +777,7 @@ function doLogin(){
   const msgs={supervisor:'Supervisor — acesso total.',adm:'Administrador — cria OS e movimenta Pedido e Avisado.',gerente:'Gerente — cria OS e movimenta Pedido e Avisado.',montagem:'Montagem — acesso a Ag. montagem e Em montagem.',posvendas:'Pós-vendas — visualização de todos os serviços.'};
   const b=document.getElementById('ab');b.textContent=msgs[U.r];b.className='ab '+U.r;
   document.getElementById('t-e').style.display=(R&&R.es)?'block':'none';
+  document.getElementById('t-cr').style.display=(R&&(R.ed||R.r==='posvendas'))?'block':'none';
   loadData();
 }
 function doLogout(){
@@ -695,14 +791,14 @@ function doLogout(){
 
 // ── TABS ──────────────────────────────────────────
 function sw(tab){
-  const map={k:'ks',r:'rs',g:'gs',r2:'r2s',pz:'pzs',e:'es'};
+  const map={k:'ks',r:'rs',g:'gs',r2:'r2s',pz:'pzs',cr:'crs',e:'es'};
   // Primeiro esconde tudo
   Object.values(map).forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.style.display='none';
   });
   // Atualiza abas
-  ['k','r','g','r2','pz','e'].forEach(t=>{
+  ['k','r','g','r2','pz','cr','e'].forEach(t=>{
     const tb=document.getElementById('t-'+t);
     if(tb)tb.className='tab'+(tab===t?' active':'');
   });
@@ -716,6 +812,7 @@ function sw(tab){
   if(tab==='g')rnGar();
   if(tab==='r2')rnRef();
   if(tab==='pz')rnPrazos();
+  if(tab==='cr')rnCr();
   if(tab==='e')rnEst();
 }
 
@@ -750,6 +847,377 @@ function tgFiltro(tipo){
   rnKan();
   if(filtroAtivo)window.scrollTo({top:0,behavior:'smooth'});
 }
+
+// ── CREDIÁRIO ─────────────────────────────────────────────────────────────────
+let crParcelas=[];
+
+function opNovoCr(){
+  crParcelas=[];
+  document.getElementById('cr-nome').value='';
+  document.getElementById('cr-os').value='';
+  document.getElementById('cr-fin-novo').value='multicredito';
+  document.getElementById('cr-vcompra').value='';
+  document.getElementById('cr-vcred').value='';
+  document.getElementById('cr-ventrada').value='';
+  document.getElementById('cr-dtentrada').value='';
+  document.getElementById('cr-nparc').value='';
+  document.getElementById('cr-dt1parc').value='';
+  document.getElementById('cr-parcelas-lista').innerHTML='<div class="er" style="padding:1rem">Clique em Gerar ou adicione manualmente.</div>';
+  document.getElementById('cr-modal').style.display='flex';
+}
+function clsNovoCr(){document.getElementById('cr-modal').style.display='none';}
+
+function gerarParcelas(){
+  const n=parseInt(document.getElementById('cr-nparc').value)||0;
+  const dt1=document.getElementById('cr-dt1parc').value;
+  const vcred=parseFloat(document.getElementById('cr-vcred').value)||0;
+  if(!n||!dt1||!vcred){alert('Preencha: Valor Crediário, Nº parcelas e Data da 1ª parcela.');return;}
+  const vp=parseFloat((vcred/n).toFixed(2));
+  const dia=new Date(dt1+'T12:00:00').getDate();
+  crParcelas=[];
+  for(let i=0;i<n;i++){
+    const dt=new Date(dt1+'T12:00:00');
+    dt.setMonth(dt.getMonth()+i);
+    dt.setDate(Math.min(dia,new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate()));
+    crParcelas.push({numero:i+1,valor:vp,dt_vencimento:dt.toISOString().split('T')[0]});
+  }
+  renderParcelas();
+}
+
+function addParcManual(){
+  crParcelas.push({numero:crParcelas.length+1,valor:0,dt_vencimento:''});
+  renderParcelas();
+}
+
+function renderParcelas(){
+  const el=document.getElementById('cr-parcelas-lista');
+  if(!crParcelas.length){el.innerHTML='<div class="er" style="padding:1rem">Nenhuma parcela.</div>';return;}
+  el.innerHTML=crParcelas.map((p,i)=>`
+    <div style="display:grid;grid-template-columns:40px 1fr 1fr 32px;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid var(--bo)">
+      <span style="font-size:12px;font-weight:700;color:var(--mu)">${p.numero}x</span>
+      <input type="number" step="0.01" value="${p.valor}" placeholder="Valor" onchange="crParcelas[${i}].valor=parseFloat(this.value)||0"
+        style="font-size:12px;padding:5px 8px;border:1.5px solid var(--bo);border-radius:7px;background:var(--bg);color:var(--tx);font-family:inherit;outline:none"/>
+      <input type="date" value="${p.dt_vencimento}" onchange="crParcelas[${i}].dt_vencimento=this.value"
+        style="font-size:12px;padding:5px 8px;border:1.5px solid var(--bo);border-radius:7px;background:var(--bg);color:var(--tx);font-family:inherit;outline:none"/>
+      <button onclick="crParcelas.splice(${i},1);renderParcelas()" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid #FECACA;background:#FEF2F2;color:#DC2626;cursor:pointer">x</button>
+    </div>`).join('');
+}
+
+async function svNovoCr(){
+  const nome=document.getElementById('cr-nome').value.trim();
+  const fin=document.getElementById('cr-fin-novo').value;
+  const vcompra=parseFloat(document.getElementById('cr-vcompra').value)||0;
+  const vcred=parseFloat(document.getElementById('cr-vcred').value)||0;
+  if(!nome){alert('Preencha o nome do cliente.');return;}
+  if(!vcred){alert('Preencha o valor do crediário.');return;}
+  if(!crParcelas.length){alert('Adicione pelo menos uma parcela.');return;}
+  const invalidas=crParcelas.filter(p=>!p.dt_vencimento||!p.valor);
+  if(invalidas.length){alert('Preencha valor e data de todas as parcelas.');return;}
+
+  const btn=document.querySelector('#cr-modal .bsv');
+  if(btn){btn.textContent='Salvando...';btn.disabled=true;}
+
+  const id='cr_'+Date.now();
+  const un=U&&U.un?U.un:'piracicaba';
+  const ventrada=parseFloat(document.getElementById('cr-ventrada').value)||0;
+
+  const contrato={
+    id,unidade:un,financeira:fin,
+    nome,os:document.getElementById('cr-os').value.trim()||null,
+    valor_compra:vcompra,valor_crediario:vcred,
+    valor_entrada:ventrada,
+    dt_entrada:document.getElementById('cr-dtentrada').value||null,
+    entrada_paga:false,dt_entrada_paga:null,entrada_paga_por:null,
+    num_parcelas:crParcelas.length,status:'aberto',
+    obs:null,criado_por:U.n
+  };
+
+  const parcelas=crParcelas.map((p,i)=>({
+    id:'crp_'+Date.now()+'_'+i,
+    crediario_id:id,unidade:un,financeira:fin,
+    numero:p.numero,valor:p.valor,
+    dt_vencimento:p.dt_vencimento,
+    dt_pagamento:null,status:'aberto',baixado_por:null,obs:null
+  }));
+
+  try{
+    await sbUpsert('crediario',contrato);
+    for(const p of parcelas) await sbUpsert('crediario_parcelas',p);
+    clsNovoCr();
+    await rnCr();
+    setSy('ok','Crediário salvo!');
+  }catch(err){
+    alert('Erro ao salvar: '+err.message);
+    setSy('e','Erro: '+err.message);
+  }finally{
+    if(btn){btn.textContent='Salvar';btn.disabled=false;}
+  }
+}
+
+async function rnCr(){
+  const un=U&&U.un?U.un:'piracicaba';
+  const finFiltro=document.getElementById('cr-fin')?.value||'todos';
+  const statusFiltro=document.getElementById('cr-status')?.value||'todos';
+  const busca=(document.getElementById('cr-busca')?.value||'').toLowerCase();
+  const dtIni=document.getElementById('cr-dt-ini')?.value||'';
+  const dtFim=document.getElementById('cr-dt-fim')?.value||'';
+  const body=document.getElementById('cr-body');
+  if(body)body.innerHTML='<div class="er">Carregando...</div>';
+
+  // Mostra botão novo só para adm/supervisor
+  const btnNovo=document.getElementById('cr-novo-btn');
+  if(btnNovo)btnNovo.style.display=R&&R.ed?'block':'none';
+
+  try{
+    let params=`unidade=eq.${un}&order=created_at.desc`;
+    if(finFiltro!=='todos')params+=`&financeira=eq.${finFiltro}`;
+    const contratos=await sbGet('crediario',params);
+
+    // Carrega parcelas
+    const ids=contratos.map(c=>c.id);
+    let parcs=[];
+    if(ids.length){
+      parcs=await sbGet('crediario_parcelas',`crediario_id=in.(${ids.map(i=>`"${i}"`).join(',')})&order=dt_vencimento.asc`);
+    }
+
+    // Atualiza status atrasado
+    const hoje=new Date().toISOString().split('T')[0];
+    parcs.forEach(p=>{if(p.status==='aberto'&&p.dt_vencimento<hoje)p.status='atrasado';});
+
+    // KPIs
+    const total=contratos.length;
+    const vlTotal=contratos.reduce((s,c)=>s+(c.valor_crediario||0),0);
+    const vlPago=parcs.filter(p=>p.status==='pago').reduce((s,p)=>s+(p.valor||0),0);
+    const vlAberto=parcs.filter(p=>p.status!=='pago').reduce((s,p)=>s+(p.valor||0),0);
+    const atrasados=parcs.filter(p=>p.status==='atrasado').length;
+
+    const kpis=document.getElementById('cr-kpis');
+    if(kpis)kpis.innerHTML=`
+      <div class="rs2"><div class="rl">Contratos</div><div class="rv v">${total}</div></div>
+      <div class="rs2"><div class="rl">Vl. Total</div><div class="rv" style="color:var(--tx)">R$ ${vlTotal.toFixed(2)}</div></div>
+      <div class="rs2"><div class="rl">Vl. Recebido</div><div class="rv v">R$ ${vlPago.toFixed(2)}</div></div>
+      <div class="rs2"><div class="rl">Vl. Em aberto</div><div class="rv d">R$ ${vlAberto.toFixed(2)}</div></div>
+      <div class="rs2"><div class="rl">Parc. Atrasadas</div><div class="rv d">${atrasados}</div></div>`;
+
+    // Monta mapa de parcelas por contrato
+    const parcMap={};
+    parcs.forEach(p=>{if(!parcMap[p.crediario_id])parcMap[p.crediario_id]=[];parcMap[p.crediario_id].push(p);});
+
+    // Filtra contratos
+    let filtrados=contratos.filter(c=>{
+      if(busca&&!c.nome.toLowerCase().includes(busca)&&!(c.os||'').toLowerCase().includes(busca))return false;
+      if(dtIni&&(c.created_at||'').split('T')[0]<dtIni)return false;
+      if(dtFim&&(c.created_at||'').split('T')[0]>dtFim)return false;
+      const cParcs=parcMap[c.id]||[];
+      if(statusFiltro==='pago'&&cParcs.some(p=>p.status!=='pago'))return false;
+      if(statusFiltro==='atrasado'&&!cParcs.some(p=>p.status==='atrasado'))return false;
+      if(statusFiltro==='aberto'&&!cParcs.some(p=>p.status==='aberto'))return false;
+      return true;
+    });
+
+    if(!filtrados.length){
+      if(body)body.innerHTML='<div class="er">Nenhum contrato encontrado.</div>';
+      return;
+    }
+
+    const stStyle={aberto:'background:#EFF6FF;color:#1D4ED8',atrasado:'background:#FEF2F2;color:#DC2626',pago:'background:#F0FDF4;color:#16A34A'};
+    const stLabel={aberto:'Em aberto',atrasado:'Atrasado',pago:'Pago'};
+    const finLabel={multicredito:'Multicrédito',asaas:'ASAAS'};
+    const finColor={multicredito:'background:#EDE9FE;color:#5B21B6',asaas:'background:#E0F2FE;color:#0369A1'};
+
+    if(body)body.innerHTML=`<table>
+      <thead><tr>
+        <th>#</th><th>Nome</th><th>OS</th><th>Financeira</th>
+        <th>Vl. Crediário</th><th>Entrada</th><th>Parcelas</th><th>Situação</th><th>Ações</th>
+      </tr></thead>
+      <tbody>${filtrados.map((c,i)=>{
+        const cParcs=parcMap[c.id]||[];
+        const pagas=cParcs.filter(p=>p.status==='pago').length;
+        const atras=cParcs.some(p=>p.status==='atrasado');
+        const st=pagas===cParcs.length&&cParcs.length?'pago':atras?'atrasado':'aberto';
+        return`<tr>
+          <td style="color:var(--mu);font-size:11px">${i+1}</td>
+          <td style="font-weight:700">${c.nome}</td>
+          <td style="color:var(--mu)">${c.os||'—'}</td>
+          <td><span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;${finColor[c.financeira]||''}">${finLabel[c.financeira]||c.financeira}</span></td>
+          <td style="font-weight:700">R$ ${(c.valor_crediario||0).toFixed(2)}</td>
+          <td style="color:var(--mu)">${c.valor_entrada?'R$ '+c.valor_entrada.toFixed(2):'—'}</td>
+          <td style="color:var(--mu)">${pagas}/${cParcs.length}</td>
+          <td><span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;${stStyle[st]}">${stLabel[st]}</span></td>
+          <td style="display:flex;gap:4px">
+            <button onclick="opCrDet('${c.id}')" style="font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid var(--bo);background:var(--bg);color:var(--tx);cursor:pointer;font-weight:600">Ver</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+  }catch(err){
+    if(body)body.innerHTML=`<div class="er">Erro: ${err.message}</div>`;
+  }
+}
+
+async function opCrDet(cid){
+  const un=U&&U.un?U.un:'piracicaba';
+  document.getElementById('cr-detalhe-modal').style.display='flex';
+  document.getElementById('cr-det-body').innerHTML='<div class="er">Carregando...</div>';
+  try{
+    const [contratos,parcs]=await Promise.all([
+      sbGet('crediario',`id=eq.${cid}`),
+      sbGet('crediario_parcelas',`crediario_id=eq.${cid}&order=numero.asc`)
+    ]);
+    const c=contratos[0];if(!c)return;
+    document.getElementById('cr-det-title').textContent=c.nome+' — '+c.os||'Contrato';
+    window._crDetId=cid;
+    window._crDetData={c,parcs};
+
+    const hoje=new Date().toISOString().split('T')[0];
+    parcs.forEach(p=>{if(p.status==='aberto'&&p.dt_vencimento<hoje)p.status='atrasado';});
+    const stStyle={aberto:'background:#EFF6FF;color:#1D4ED8',atrasado:'background:#FEF2F2;color:#DC2626',pago:'background:#F0FDF4;color:#16A34A'};
+    const stLabel={aberto:'Em aberto',atrasado:'Atrasado',pago:'Pago'};
+    const finLabel={multicredito:'Multicrédito',asaas:'ASAAS'};
+
+    document.getElementById('cr-det-body').innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;padding:12px;background:var(--bg);border-radius:10px">
+        <div><div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase">Nome</div><div style="font-weight:700">${c.nome}</div></div>
+        <div><div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase">OS</div><div>${c.os||'—'}</div></div>
+        <div><div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase">Financeira</div><div style="font-weight:600">${finLabel[c.financeira]||c.financeira}</div></div>
+        <div><div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase">Vl. Compra</div><div>R$ ${(c.valor_compra||0).toFixed(2)}</div></div>
+        <div><div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase">Vl. Crediário</div><div style="font-weight:700;color:var(--v)">R$ ${(c.valor_crediario||0).toFixed(2)}</div></div>
+        <div><div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase">Entrada</div><div>${c.valor_entrada?'R$ '+c.valor_entrada.toFixed(2)+' — '+(c.entrada_paga?'Pago':'Em aberto'):'—'}</div></div>
+        ${c.valor_entrada&&!c.entrada_paga&&R&&R.ed?`<div style="grid-column:1/-1"><button onclick="crBaixaEntrada('${c.id}')" style="font-size:11px;padding:5px 12px;border-radius:7px;border:1px solid var(--v);background:var(--vl);color:var(--v);cursor:pointer;font-weight:700">Baixar Entrada</button></div>`:''}
+      </div>
+      <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:8px">Parcelas (${parcs.filter(p=>p.status==='pago').length}/${parcs.length} pagas)</div>
+      <table>
+        <thead><tr><th>#</th><th>Valor</th><th>Vencimento</th><th>Status</th><th>Pago em</th><th>Por</th>${R&&R.ed?'<th>Ação</th>':''}</tr></thead>
+        <tbody>${parcs.map(p=>{
+          const venc=p.dt_vencimento?p.dt_vencimento.split('-').reverse().join('/'):'—';
+          const pago=p.dt_pagamento?p.dt_pagamento.split('-').reverse().join('/'):'—';
+          const st=p.status==='aberto'&&p.dt_vencimento<hoje?'atrasado':p.status;
+          return`<tr>
+            <td>${p.numero}</td>
+            <td style="font-weight:700">R$ ${(p.valor||0).toFixed(2)}</td>
+            <td style="color:${st==='atrasado'?'#DC2626':'var(--tx)'};font-weight:${st==='atrasado'?'700':'400'}">${venc}</td>
+            <td><span style="font-size:10px;padding:2px 7px;border-radius:6px;font-weight:700;${stStyle[st]}">${stLabel[st]}</span></td>
+            <td style="color:var(--mu)">${pago}</td>
+            <td style="color:var(--mu);font-size:11px">${p.baixado_por||'—'}</td>
+            ${R&&R.ed?`<td>${st!=='pago'?`<button onclick="opCrBaixa('${p.id}')" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid rgba(27,168,160,.3);background:var(--vl);color:var(--v);cursor:pointer;font-weight:700">Baixar</button>`:'—'}</td>`:''}
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+  }catch(err){
+    document.getElementById('cr-det-body').innerHTML=`<div class="er">Erro: ${err.message}</div>`;
+  }
+}
+function clsCrDet(){document.getElementById('cr-detalhe-modal').style.display='none';}
+
+function opCrBaixa(pid){
+  document.getElementById('cr-baixa-id').value=pid;
+  document.getElementById('cr-baixa-dt').value=new Date().toISOString().split('T')[0];
+  document.getElementById('cr-baixa-obs').value='';
+  document.getElementById('cr-baixa-modal').style.display='flex';
+}
+function clsCrBaixa(){document.getElementById('cr-baixa-modal').style.display='none';}
+
+async function svCrBaixa(){
+  const pid=document.getElementById('cr-baixa-id').value;
+  const dt=document.getElementById('cr-baixa-dt').value;
+  const obs=document.getElementById('cr-baixa-obs').value.trim();
+  if(!dt){alert('Informe a data do pagamento.');return;}
+  try{
+    await sbPatch('crediario_parcelas',{status:'pago',dt_pagamento:dt,baixado_por:U.n,obs:obs||null},{id:pid});
+    clsCrBaixa();
+    if(window._crDetId)await opCrDet(window._crDetId);
+    await rnCr();
+    setSy('ok','Baixa registrada!');
+  }catch(err){alert('Erro: '+err.message);}
+}
+
+async function crBaixaEntrada(cid){
+  const dt=new Date().toISOString().split('T')[0];
+  try{
+    await sbPatch('crediario',{entrada_paga:true,dt_entrada_paga:dt,entrada_paga_por:U.n},{id:cid});
+    await opCrDet(cid);
+    setSy('ok','Entrada baixada!');
+  }catch(err){alert('Erro: '+err.message);}
+}
+
+function expCrPDF(){
+  const data=window._crDetData;
+  if(!data)return;
+  const{c,parcs}=data;
+  const hoje=new Date().toISOString().split('T')[0];
+  parcs.forEach(p=>{if(p.status==='aberto'&&p.dt_vencimento<hoje)p.status='atrasado';});
+  const stLabel={aberto:'Em aberto',atrasado:'Atrasado',pago:'Pago'};
+  const finLabel={multicredito:'Multicrédito',asaas:'ASAAS'};
+
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Crediário — ${c.nome}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:Arial,sans-serif;font-size:12px;color:#1A1A1A;padding:30px}
+    .header{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #1BA8A0;padding-bottom:12px;margin-bottom:20px}
+    .brand{font-size:22px;font-weight:800;color:#1BA8A0}
+    .sub{font-size:11px;color:#64748B}
+    .section{background:#F0F4F8;border-radius:8px;padding:14px;margin-bottom:16px}
+    .section-title{font-size:11px;font-weight:800;color:#64748B;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .field label{font-size:10px;color:#64748B;font-weight:700;text-transform:uppercase}
+    .field span{font-size:13px;font-weight:600;color:#0F1923}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th{font-size:10px;font-weight:800;color:#64748B;text-align:left;padding:7px 10px;background:#F0F4F8;text-transform:uppercase;letter-spacing:.04em}
+    td{font-size:12px;padding:7px 10px;border-bottom:1px solid #E2E8F0}
+    .badge{font-size:10px;padding:2px 8px;border-radius:5px;font-weight:700}
+    .aberto{background:#EFF6FF;color:#1D4ED8}
+    .atrasado{background:#FEF2F2;color:#DC2626}
+    .pago{background:#F0FDF4;color:#16A34A}
+    .total-row{background:#E8F7F6;font-weight:700}
+    .footer{margin-top:24px;border-top:1px solid #E2E8F0;padding-top:12px;font-size:10px;color:#64748B;display:flex;justify-content:space-between}
+    @media print{body{padding:15px}}
+  </style></head><body>
+  <div class="header">
+    <div><div class="brand">Óticas Idealize</div><div class="sub">Contrato de Crediário</div></div>
+    <div style="text-align:right"><div class="sub">Emitido em: ${new Date().toLocaleDateString('pt-BR')}</div><div class="sub">Financeira: ${finLabel[c.financeira]||c.financeira}</div></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Dados do Contrato</div>
+    <div class="grid">
+      <div class="field"><label>Nome do Cliente</label><br><span>${c.nome}</span></div>
+      <div class="field"><label>Ordem de Serviço</label><br><span>${c.os||'—'}</span></div>
+      <div class="field"><label>Valor da Compra</label><br><span>R$ ${(c.valor_compra||0).toFixed(2)}</span></div>
+      <div class="field"><label>Valor do Crediário</label><br><span style="color:#1BA8A0">R$ ${(c.valor_crediario||0).toFixed(2)}</span></div>
+      <div class="field"><label>Entrada</label><br><span>${c.valor_entrada?'R$ '+c.valor_entrada.toFixed(2):' — '}</span></div>
+      <div class="field"><label>Data da Entrada</label><br><span>${c.dt_entrada?c.dt_entrada.split('-').reverse().join('/'):'—'}</span></div>
+      <div class="field"><label>Total de Parcelas</label><br><span>${c.num_parcelas}x de R$ ${((c.valor_crediario||0)/c.num_parcelas).toFixed(2)}</span></div>
+      <div class="field"><label>Criado por</label><br><span>${c.criado_por||'—'}</span></div>
+    </div>
+  </div>
+  <div class="section-title" style="margin-bottom:8px">Parcelas</div>
+  <table>
+    <thead><tr><th>#</th><th>Valor</th><th>Vencimento</th><th>Status</th><th>Pago em</th><th>Por</th></tr></thead>
+    <tbody>
+      ${parcs.map(p=>`<tr>
+        <td>${p.numero}</td>
+        <td><strong>R$ ${(p.valor||0).toFixed(2)}</strong></td>
+        <td>${p.dt_vencimento?p.dt_vencimento.split('-').reverse().join('/'):'—'}</td>
+        <td><span class="badge ${p.status}">${stLabel[p.status]||p.status}</span></td>
+        <td>${p.dt_pagamento?p.dt_pagamento.split('-').reverse().join('/'):'—'}</td>
+        <td>${p.baixado_por||'—'}</td>
+      </tr>`).join('')}
+      <tr class="total-row">
+        <td colspan="2"><strong>Total: R$ ${parcs.reduce((s,p)=>s+(p.valor||0),0).toFixed(2)}</strong></td>
+        <td colspan="2">Pago: R$ ${parcs.filter(p=>p.status==='pago').reduce((s,p)=>s+(p.valor||0),0).toFixed(2)}</td>
+        <td colspan="2">Em aberto: R$ ${parcs.filter(p=>p.status!=='pago').reduce((s,p)=>s+(p.valor||0),0).toFixed(2)}</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="footer">
+    <span>Óticas Idealize — Sistema de Crediário</span>
+    <span>${new Date().toLocaleString('pt-BR')}</span>
+  </div>
+  <script>window.onload=()=>window.print();<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
 let rfId=null,mvPendId=null,editId=null;
 function clsLab(){mvPendId=null;document.getElementById('labm').style.display='none';}
 async function svLab(){const lab=document.getElementById('flab').value;if(!lab){alert('Selecione Lab Próprio ou Lab Parceiro.');return;}const pendId=mvPendId;clsLab();await mvCardExec(pendId,lab,null);}
